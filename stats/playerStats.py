@@ -1,5 +1,5 @@
-from equipment import *
-from stats import *
+from stats.equipment import *
+from stats.stats import *
 class PlayerEquip:
     """
     Container that holds the player's out of battle static stats (not current hp, tp, etc).

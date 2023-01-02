@@ -1,11 +1,13 @@
 import pygame as pg
 from os import system
+from os.path import abspath
 import esper
 from dataclass import dataclass
 from typing import List, Dict, Tuple
+import pathlib
+from mapScreen.mapScreen import Input
 
 #PYGAME DEPENDENCIES
-clock = pg.time.Clock()
 pg.font.init()
 
 def cls():
@@ -31,20 +33,7 @@ class Options:
         self.textSpeed = textSpeed
         self.Screen = screen
 
-class Input:
-    """Component that internally processes input. Is configurable"""
-    buttonMaps : Dict[str, List[int]]
-    buttons : Dict[str, bool]
-    def __init__(self, maps):
-        self.buttonMaps = maps
-        self.buttons = dict()
-    def pumpInput(self):
-        """Internally gathers and processes input. Should be called once per frame."""
-        pressed = pg.key.get_pressed()
-        for key in self.buttonMaps.keys():
-            self.buttons[key] = any([pressed[i] for i in self.buttonMaps[key]])
-        #print(self.buttons)
-        pg.event.pump()
+
 
 class DialogInstance:
     """
@@ -103,7 +92,7 @@ class DialogText(DialogInstance):
         self.text = text
         self.playerOptions = playerOptions
         self.nextDialog = nextDialog
-        self.font = pg.font.Font("ponde___.ttf", 16)
+        self.font = pg.font.SysFont("OpenSans Mono", 16)
     
     def Activate(self):
         self.active = True
@@ -342,17 +331,12 @@ class NPCBrain:
         
     
 
-class InputProcessor(esper.Processor):
-    def process(self):
-        """Pump inputs once per frame"""
-        inputs = self.world.get_component(Input)[0][1]
-        inputs.pumpInput()
+
 class DialogProcessor(esper.Processor):
     """
     ECS System that updates active dialog boxes automatically.
     """
     def process(self):
-        screen.fill((255,255,255))
         optionobj, options = self.world.get_component(Options)[0]
         inputs = self.world.get_component(Input)[0][1]
         for ent, dial in self.world.get_component(Dialog):

@@ -1,0 +1,47 @@
+Healing Place Interaction
+Bobby:Hello!||1
+Bobby:Welcome to the healing place!||2
+Bobby:Would you like to heal?|Yes,No|4,3
+Bobby:Goodbye!||-2
+\HealPlayer||5
+Healed fully!||3
+
+Fix Healing Place - First
+Bobby:Hello! My name is Bobby, and I used to run this healing center before it got destroyed.||1
+Bobby:Come to think of it, can you do something for me?|Yes,No|2,3
+Bobby:Great! Can you bring me <Item>? I need it to fix my healing center!||4
+Bobby:That's a shame... I'll be here if you need me.||-2
+\GiveQuest FixHealingPlace||5
+Bobby:Thanks! It'll be worth your while!||6
+Quest added to your list!||-2
+
+Fix Healing Place
+Bobby:Changed your mind about helping me?|Yes,No|1,2
+Bobby:Great! Can you bring me <Item>? I need it to fix my healing center!||3
+Bobby:That's a shame... I can wait.||-2
+\GiveQuest FixHealingPlace||4
+Bobby:Thanks! It'll be worth your while!||5
+Quest added to your list!||-2
+
+Fix Healing Place - Conditions met
+Bobby:Oh! I see you have <Item>! Can I have it?|Yes,No|1,2
+Bobby:Thank you! Now I can fix this place up.||3
+Bobby:Ok then. I'll be here if you need me.||-2
+\TakeItem <Item>||4
+\FinishQuest FixHealingPlace||5
+Bobby:Bye for now. If you need healing, come see me!||-2
+
+Fix Healing Place - Reminder
+Bobby:Remember, if you want to help me fix this place, I need <Item>.||-2
+
+Kaepora Gaebora Monologue
+Hoo hoot! Link... Look up here!||1
+It appears that the time has finally come for you to start your adventure!||2
+You will encounter many hardships ahead... That is your fate. Don't feel discouraged, even during the toughest times!||3
+Go straight this way and you will see Hyrule Castle. You will meet a princess there... ||4
+If you are lost and don't know which way to go, look at the Map. ||5
+The areas you have explored will be shown on the map. ||6
+Press START to enter the subscreens and Z or R to find the map. ||7
+On the map subscreen, you will also see a flashing dot showing you which way to go next. ||8
+Did you get all that?|No,Yes|2,9 
+Alright then, I'll see you around! Hoot Hoot Hoot Ho!||-2

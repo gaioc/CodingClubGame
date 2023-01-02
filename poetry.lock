@@ -100,6 +100,14 @@ python-versions = ">=3.6.8"
 diagrams = ["railroad-diagrams", "jinja2"]
 
 [[package]]
+name = "python-ian-utils"
+version = "1.0"
+description = "Python Distribution Utilities"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "python-lsp-jsonrpc"
 version = "1.0.0"
 description = "JSON RPC 2.0 server library"
@@ -115,7 +123,7 @@ test = ["pylint", "pycodestyle", "pyflakes", "pytest", "pytest-cov", "coverage"]
 
 [[package]]
 name = "python-lsp-server"
-version = "1.6.0"
+version = "1.7.0"
 description = "Python Language Server for the Language Server Protocol"
 category = "dev"
 optional = false
@@ -125,23 +133,23 @@ python-versions = ">=3.7"
 docstring-to-markdown = "*"
 jedi = ">=0.17.2,<0.19.0"
 pluggy = ">=1.0.0"
-pyflakes = {version = ">=2.5.0,<2.6.0", optional = true, markers = "extra == \"pyflakes\""}
+pyflakes = {version = ">=2.5.0,<3.1.0", optional = true, markers = "extra == \"pyflakes\""}
 python-lsp-jsonrpc = ">=1.0.0"
-rope = {version = ">0.10.5", optional = true, markers = "extra == \"rope\""}
+rope = {version = ">1.2.0", optional = true, markers = "extra == \"rope\""}
 ujson = ">=3.0.0"
 whatthepatch = {version = ">=1.0.2,<2.0.0", optional = true, markers = "extra == \"yapf\""}
 yapf = {version = "*", optional = true, markers = "extra == \"yapf\""}
 
 [package.extras]
-all = ["autopep8 (>=1.6.0,<1.7.0)", "flake8 (>=5.0.0,<5.1.0)", "mccabe (>=0.7.0,<0.8.0)", "pycodestyle (>=2.9.0,<2.10.0)", "pydocstyle (>=2.0.0)", "pyflakes (>=2.5.0,<2.6.0)", "pylint (>=2.5.0)", "rope (>=0.10.5)", "yapf", "whatthepatch"]
+all = ["autopep8 (>=1.6.0,<1.7.0)", "flake8 (>=5.0.0,<7)", "mccabe (>=0.7.0,<0.8.0)", "pycodestyle (>=2.9.0,<2.11.0)", "pydocstyle (>=2.0.0)", "pyflakes (>=2.5.0,<3.1.0)", "pylint (>=2.5.0)", "rope (>1.2.0)", "yapf", "whatthepatch"]
 autopep8 = ["autopep8 (>=1.6.0,<1.7.0)"]
-flake8 = ["flake8 (>=5.0.0,<5.1.0)"]
+flake8 = ["flake8 (>=5.0.0,<7)"]
 mccabe = ["mccabe (>=0.7.0,<0.8.0)"]
-pycodestyle = ["pycodestyle (>=2.9.0,<2.10.0)"]
+pycodestyle = ["pycodestyle (>=2.9.0,<2.11.0)"]
 pydocstyle = ["pydocstyle (>=2.0.0)"]
-pyflakes = ["pyflakes (>=2.5.0,<2.6.0)"]
+pyflakes = ["pyflakes (>=2.5.0,<3.1.0)"]
 pylint = ["pylint (>=2.5.0)"]
-rope = ["rope (>0.10.5)"]
+rope = ["rope (>1.2.0)"]
 test = ["pylint (>=2.5.0)", "pytest", "pytest-cov", "coverage", "numpy", "pandas", "matplotlib", "pyqt5", "flaky"]
 websockets = ["websockets (>=10.3)"]
 yapf = ["yapf", "whatthepatch (>=1.0.2,<2.0.0)"]
@@ -222,7 +230,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8.0,<3.9"
-content-hash = "f31c0f63e2de5916bf41df4346a81914613e86c67bc83922f7fadb37b650a91c"
+content-hash = "cc16c7de05f5c109a2466bffec23eba1aebf4fc009dd379319c43c14044dd086"
 
 [metadata.files]
 debugpy = []
@@ -235,6 +243,7 @@ pluggy = []
 pyflakes = []
 pygame = []
 pyparsing = []
+python-ian-utils = []
 python-lsp-jsonrpc = []
 python-lsp-server = []
 pytoolconfig = []

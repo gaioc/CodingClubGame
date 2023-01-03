@@ -1,0 +1,9 @@
+Simple Calculator
+accessory
+magiAtk:-5
+magiDef:30
+
+Protector's Shield
+armour
+physDef:20
+magiDef:10

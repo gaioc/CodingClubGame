@@ -28,10 +28,10 @@ class Camera:
 class Tile:
     """Data for a single tile type"""
     tileSprite : pg.Surface
-    solid : bool = False
-    def __init__(self, sprite, solid, consts):
+    walkable : bool = False
+    def __init__(self, sprite, walkable, consts):
         self.tileSprite = pg.transform.scale(sprite, (consts.tileSize, consts.tileSize))
-        self.solid = solid
+        self.walkable = walkable
 
 class Position:
     """Component related to positions"""
@@ -60,13 +60,13 @@ class SpriteRenderer:
     
 
 class TileArray:
-    """Holds tile data to be indexed by a TileMap"""
-    tileData : List[Tile]
+    """Holds tile data to be indexed by a TileMap, in Dict form"""
+    tileData : Dict[str, Tile]
     def __init__(self, data):
         self.tileData = data
 
 class TileMap:
-    """2D Array of tiles, as integer indexes"""
+    """2D Array of tiles, as string indexes to a TileArray"""
     mapSize : Tuple[int] = (24,24)
     mapData : List[List[int]] = []
     tileMapping : TileArray
@@ -84,7 +84,7 @@ class TileMap:
                 except IndexError:
                     raise IndexError("map size larger than provided data")
                 try:
-                    tile = self.tileMapping[value]
+                    tile = self.tileMapping.tileData[value]
                 except IndexError:
                     raise IndexError("tile data index out of bounds")
         
@@ -138,6 +138,16 @@ class PlayerMove:
             position.posy -= self.speed
         if position.posx == position.predictedposx and position.posy == position.predictedposy:
             position.moving = False
+
+def readTileData(dataStr, consts):
+    """Read in a file containing tile data, as specified in tilesFormat.md"""
+    tilesRaw = dataStr.split("\n\n")
+    outTiles = TileArray(dict())
+    for tileData in tilesRaw:
+        lines = tileData.split("\n")
+        outTiles.tileData[lines[0]] = Tile(pg.image.load(f"assets/art/tiles/{lines[1]}"), lines[2], consts)
+    return outTiles
+
 
 
 class InputProcessor(esper.Processor):

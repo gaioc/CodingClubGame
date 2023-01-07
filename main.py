@@ -47,16 +47,17 @@ consts = world.create_entity(mapScreen.Consts(
 #CURRENTLY DUMMY VALUES
 camera = world.create_entity(mapScreen.Camera(0,0))
 
+#Testing tile data reading
+with open("mapScreen/tiles.txt") as tileRaw:
+    tileMapping = mapScreen.readTileData(tileRaw.read(), world.component_for_entity(consts, mapScreen.Consts))
+
 testMap = world.create_entity(mapScreen.TileMap(
     (50, 50), #50 by 50 should be much larger than we would ever need in a (relatively) indoor setting
     [
-        [(1 if random.randint(0,5) == 5 else 0) for x in range(50)] 
+        [("W" if random.randint(0,5) == 5 else "F") for x in range(50)] 
         for y in range(50)
     ],
-    [
-        mapScreen.Tile(pg.image.load("assets/art/tiles/grass.png"), False, world.component_for_entity(consts, mapScreen.Consts)),
-        mapScreen.Tile(pg.image.load("assets/art/tiles/shallow.png"), False, world.component_for_entity(consts, mapScreen.Consts))
-    ]
+    tileMapping
 ))
 
 player = world.create_entity(mapScreen.Position(0,0), 

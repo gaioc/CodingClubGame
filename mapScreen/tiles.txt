@@ -2,6 +2,14 @@ F
 grass.png
 True
 
-W
+S
 shallow.png
+False
+
+f
+temp_floor.png
+True
+
+W
+temp_wall.png
 False

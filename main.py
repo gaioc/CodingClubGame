@@ -51,18 +51,15 @@ camera = world.create_entity(mapScreen.Camera(0,0))
 with open("mapScreen/tiles.txt") as tileRaw:
     tileMapping = mapScreen.readTileData(tileRaw.read(), world.component_for_entity(consts, mapScreen.Consts))
 
-testMap = world.create_entity(mapScreen.TileMap(
-    (50, 50), #50 by 50 should be much larger than we would ever need in a (relatively) indoor setting
-    [
-        [("W" if random.randint(0,5) == 5 else "F") for x in range(50)] 
-        for y in range(50)
-    ],
-    tileMapping
-))
+with open("mapScreen/maps/testMap.txt") as mapRaw:
+    # You can try changing testMap.txt to see the effect on the result!
+    mapData = mapScreen.readMapData(mapRaw.read(), tileMapping)
+
+testMap = world.create_entity(mapData)
 
 player = world.create_entity(mapScreen.Position(0,0), 
                              mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/player.png")),
-                            mapScreen.PlayerMove(1))
+                            mapScreen.PlayerMove(4))
 
 bobTheNpc = world.create_entity(mapScreen.Position(64,64),
                                mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/npc.png")))
@@ -101,10 +98,10 @@ for x in range(300):
     world.process()
     pg.display.flip()
     clock.tick(30) #technically configurable: can run fine at 60, suffers from frame drops if you go higher
-    print(clock.get_fps()) #see console for performance
+    #print(clock.get_fps()) #see console for performance
 testNPC.interact(world, playerData)
 while 1:
     world.process()
     pg.display.flip()
     clock.tick(30) #technically configurable: can run fine at 60, suffers from frame drops if you go higher
-    print(clock.get_fps()) #see console for performance
+    #print(clock.get_fps()) #see console for performance

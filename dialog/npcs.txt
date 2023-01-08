@@ -1,0 +1,11 @@
+Bobby
+FirstInteraction(): Fix Healing Place - First
+QuestStatus(FixHealingPlace, -1): Fix Healing Place
+All(QuestStatus(FixHealingPlace, 0), HasItem(<Item>)): Fix Healing Place - Conditions met
+QuestStatus(FixHealingPlace, 0): Fix Healing Place - Reminder
+QuestStatus(FixHealingPlace, 1): Healing Place Interaction
+
+Teacher
+FirstInteraction(): Teacher First Interaction
+QuestStatus(FixHealingPlace, 0): Teacher Healing Place Commentary
+Auto(): Teacher Advice

@@ -7,6 +7,7 @@ import stats.playerStats as pStats
 import mapScreen.mapScreen as mapScreen
 import random
 
+
 #EVERYTHING BEYOND THIS POINT IS TEMPORARY AND FOR TESTING :))))
 
 clock = pg.time.Clock()
@@ -18,11 +19,11 @@ with open("stats/classStats.txt") as classData:
 
 
 bob = pStats.Character("Bob", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["english"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}))
-print(equipDict)
+#print(equipDict)
 bob.equip(equipDict["Simple Calculator"])
 bob.equip(equipDict["Protector's Shield"])
 
-print(bob)
+#print(bob)
 
 world = esper.World()
 
@@ -71,19 +72,14 @@ world.create_entity(dialog.Options(world.component_for_entity(consts,mapScreen.C
 with open("dialog/dialog.txt") as dialogData:
     dialogDict = dialog.readDialogFile(dialogData.read())
 
-playerData = dialog.PlayerData(["<Item>"], dict({"FixHealingPlace":1}), ["Bobby"])
+#Read NPC File
+with open("dialog/npcs.txt") as npcData:
+    npcDict = dialog.readNPCFile(npcData.read(), dialogDict)
+
+playerData = world.create_entity(dialog.PlayerData(["<Item>"], dict({"FixHealingPlace":0}), ["Bobby", "Teacher"]))
 
 
-testNPC = dialog.NPCBrain(
-    "Bobby",
-    [
-        dialog.BrainInstance(dialog.FirstInteractionCondition(), dialogDict["Fix Healing Place - First"]),
-        dialog.BrainInstance(dialog.QuestStatusCondition("FixHealingPlace", -1), dialogDict["Fix Healing Place"]),
-        dialog.BrainInstance(dialog.MultipleAllConditions([dialog.QuestStatusCondition("FixHealingPlace", 0), dialog.InventoryCondition("<Item>")]), dialogDict["Fix Healing Place - Conditions met"]),
-        dialog.BrainInstance(dialog.QuestStatusCondition("FixHealingPlace", 0), dialogDict["Fix Healing Place - Reminder"]),
-        dialog.BrainInstance(dialog.QuestStatusCondition("FixHealingPlace", 1), dialogDict["Healing Place Interaction"])
-    ]
-)
+testNPC = npcDict["Bobby"]
 
 
 
@@ -94,12 +90,19 @@ world.add_processor(mapScreen.GraphicsProcessor(), priority=1)
 world.add_processor(dialog.DialogProcessor(), priority=0)
 
 
+for x in range(30):
+    world.process()
+    pg.display.flip()
+    clock.tick(30) #technically configurable: can run fine at 60, suffers from frame drops if you go higher
+    #print(clock.get_fps()) #see console for performance
+testNPC.interact(world, world.component_for_entity(playerData, dialog.PlayerData))
 for x in range(300):
     world.process()
     pg.display.flip()
     clock.tick(30) #technically configurable: can run fine at 60, suffers from frame drops if you go higher
     #print(clock.get_fps()) #see console for performance
-testNPC.interact(world, playerData)
+testNPC.interact(world, world.component_for_entity(playerData, dialog.PlayerData))
+
 while 1:
     world.process()
     pg.display.flip()

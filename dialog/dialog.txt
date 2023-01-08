@@ -28,11 +28,21 @@ Bobby:Oh! I see you have <Item>! Can I have it?|Yes,No|1,2
 Bobby:Thank you! Now I can fix this place up.||3
 Bobby:Ok then. I'll be here if you need me.||-2
 \TakeItem <Item>||4
-\FinishQuest FixHealingPlace||5
+\BumpQuest FixHealingPlace||5
 Bobby:Bye for now. If you need healing, come see me!||-2
 
 Fix Healing Place - Reminder
 Bobby:Remember, if you want to help me fix this place, I need <Item>.||-2
+
+Teacher First Interaction
+Teacher:Hello! I haven't seen you around here!||-2
+
+Teacher Advice
+Teacher:If you are tired, make sure to go rest at the Hub.||-2
+
+Teacher Healing Place Commentary
+Teacher: I heard from Bobby that you're helping him fix that healing place of his. Good on you!||1
+Teacher: Just so you know, you can find <Item> in <Location>. Hope this helps!||-2
 
 Kaepora Gaebora Monologue
 Hoo hoot! Link... Look up here!||1

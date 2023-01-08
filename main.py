@@ -76,10 +76,10 @@ with open("dialog/dialog.txt") as dialogData:
 with open("dialog/npcs.txt") as npcData:
     npcDict = dialog.readNPCFile(npcData.read(), dialogDict)
 
-playerData = dialog.PlayerData(["<Item>"], dict({"FixHealingPlace":0}), ["Bobby", "Teacher"])
+playerData = world.create_entity(dialog.PlayerData(["<Item>"], dict({"FixHealingPlace":0}), ["Bobby", "Teacher"]))
 
 
-testNPC = npcDict["Teacher"]
+testNPC = npcDict["Bobby"]
 
 
 
@@ -95,7 +95,14 @@ for x in range(30):
     pg.display.flip()
     clock.tick(30) #technically configurable: can run fine at 60, suffers from frame drops if you go higher
     #print(clock.get_fps()) #see console for performance
-testNPC.interact(world, playerData)
+testNPC.interact(world, world.component_for_entity(playerData, dialog.PlayerData))
+for x in range(300):
+    world.process()
+    pg.display.flip()
+    clock.tick(30) #technically configurable: can run fine at 60, suffers from frame drops if you go higher
+    #print(clock.get_fps()) #see console for performance
+testNPC.interact(world, world.component_for_entity(playerData, dialog.PlayerData))
+
 while 1:
     world.process()
     pg.display.flip()

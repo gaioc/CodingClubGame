@@ -42,7 +42,7 @@ class DialogInstance:
     active : bool = False
     def __init__(self):
         pass
-    def Update(self, screen, inputs, textSpeed):
+    def Update(self, screen, inputs, textSpeed, playerData):
         print("NOTIMPLEMENTED: UNDEFINED FUNCTION")
         return -2
 
@@ -53,7 +53,7 @@ class DialogHealPlayer(DialogInstance):
         self.next = next
     def Activate(self):
         self.active = True
-    def Update(self, screen, inputs, textSpeed):
+    def Update(self, screen, inputs, textSpeed, playerData):
         """
         Heal the player's party to full and restore TP.
         """
@@ -69,12 +69,62 @@ class DialogGiveQuest(DialogInstance):
         self.next = next
     def Activate(self):
         self.active = True
-    def Update(self, screen, inputs, textSpeed):
+    def Update(self, screen, inputs, textSpeed, playerData):
         """
         Give the player a quest.
         """
-        print(f"NOTIMPLEMENTED: GIVE QUEST {self.questID}")
+        if self.questID not in playerData or playerData.questList[self.questID] == -1:
+            playerData.questList[self.questID] = 0
         return self.next
+
+class DialogBumpQuest(DialogInstance):
+    active : bool = False
+    questID : str
+    next : int = -2
+    def __init__(self, questID, next):
+        self.questID = questID
+        self.next = next
+    def Activate(self):
+        self.active = True
+    def Update(self, screen, inputs, textSpeed, playerData):
+        """
+        Bump a quest's level of completion up by one.
+        """
+        playerData.questList[self.questID] += 1
+        return self.next
+
+class DialogTakeItem(DialogInstance):
+    active : bool = False
+    item : str
+    next : int = -2
+    def __init__(self, item, next):
+        self.item = item
+        self.next = next
+    def Activate(self):
+        self.active = True
+    def Update(self, screen, inputs, textSpeed, playerData):
+        """
+        Take an item from player inventory
+        """
+        playerData.inventory.pop(playerData.inventory.index(self.item))
+        return self.next
+class DialogGiveItem(DialogInstance):
+    active : bool = False
+    item : str
+    next : int = -2
+    def __init__(self, item, next):
+        self.item = item
+        self.next = next
+    def Activate(self):
+        self.active = True
+    def Update(self, screen, inputs, textSpeed, playerData):
+        """
+        Give an item to player inventory
+        """
+        playerData.inventory.append(self.item)
+        return self.next
+
+
 
 class DialogText(DialogInstance):
     """                                                                                    
@@ -99,7 +149,7 @@ class DialogText(DialogInstance):
         self.textInd = 0
         self.chosenOption = 0
         self.btnHeld = True #used to make sure player does not accidentally skip dialogue
-    def Update(self, screen: pg.Surface, inputs, textSpeed: int) -> int:
+    def Update(self, screen: pg.Surface, inputs, textSpeed: int, playerData) -> int:
         #Draw dialog box
         pg.draw.rect(screen, (30,30,30), pg.Rect(8, 379, 624, 96))
         #cls()
@@ -179,10 +229,10 @@ class Dialog:
     def Activate(self):
         self.active = True
         self.dialogIndex = 0
-    def Update(self, screen, inputs, textSpeed) -> int:
+    def Update(self, screen, inputs, textSpeed, playerData) -> int:
         #Update current DialogInstance
         try:
-            result = self.texts[self.dialogIndex].Update(screen, inputs, textSpeed)
+            result = self.texts[self.dialogIndex].Update(screen, inputs, textSpeed, playerData)
         except IndexError:
             raise IndexError("Invalid dialogue jump. Make sure dialogue jumps to a valid index.")
         if result == -2:
@@ -349,9 +399,10 @@ class DialogProcessor(esper.Processor):
     def process(self):
         optionobj, options = self.world.get_component(Options)[0]
         inputs = self.world.get_component(Input)[0][1]
+        playerData = self.world.get_component(PlayerData)[0][1]
         for ent, dial in self.world.get_component(Dialog):
             if dial.active:
-                dial.Update(options.Screen, inputs, options.textSpeed)
+                dial.Update(options.Screen, inputs, options.textSpeed, playerData)
         pg.display.flip()
 
 def parseCondition(conditionStr):
@@ -448,11 +499,11 @@ def readDialogFile(dialogFileContents):
                 elif function == "\GiveQuest":
                     finalContents.append(DialogGiveQuest(functionWithArgs[1], int(parts[2])))
                 elif function == "\TakeItem":
-                    #TEMPORARY
-                    finalContents.append(DialogText(f"TAKEITEM {functionWithArgs[1]}",[],[int(parts[2])]))
-                elif function == "\FinishQuest":
-                    #TEMPORARY
-                    finalContents.append(DialogText(f"FINISHQUEST {functionWithArgs[1]}",[],[int(parts[2])]))
+                    finalContents.append(DialogTakeItem(functionWithArgs[1],int(parts[2])))
+                elif function == "\GiveItem":
+                    finalContents.append(DialogGiveItem(functionWithArgs[1],int(parts[2])))
+                elif function == "\BumpQuest":
+                    finalContents.append(DialogBumpQuest(functionWithArgs[1],int(parts[2])))
                 else:
                     finalContents.append(DialogInstance())
             else:

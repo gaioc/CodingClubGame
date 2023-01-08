@@ -28,7 +28,7 @@ Bobby:Oh! I see you have <Item>! Can I have it?|Yes,No|1,2
 Bobby:Thank you! Now I can fix this place up.||3
 Bobby:Ok then. I'll be here if you need me.||-2
 \TakeItem <Item>||4
-\FinishQuest FixHealingPlace||5
+\BumpQuest FixHealingPlace||5
 Bobby:Bye for now. If you need healing, come see me!||-2
 
 Fix Healing Place - Reminder

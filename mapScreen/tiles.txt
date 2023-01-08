@@ -1,0 +1,15 @@
+F
+grass.png
+True
+
+S
+shallow.png
+False
+
+f
+temp_floor.png
+True
+
+W
+temp_wall.png
+False

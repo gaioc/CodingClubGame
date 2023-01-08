@@ -28,10 +28,10 @@ class Camera:
 class Tile:
     """Data for a single tile type"""
     tileSprite : pg.Surface
-    solid : bool = False
-    def __init__(self, sprite, solid, consts):
+    walkable : bool = False
+    def __init__(self, sprite, walkable, consts):
         self.tileSprite = pg.transform.scale(sprite, (consts.tileSize, consts.tileSize))
-        self.solid = solid
+        self.walkable = walkable
 
 class Position:
     """Component related to positions"""
@@ -60,21 +60,25 @@ class SpriteRenderer:
     
 
 class TileArray:
-    """Holds tile data to be indexed by a TileMap"""
-    tileData : List[Tile]
+    """Holds tile data to be indexed by a TileMap, in Dict form"""
+    tileData : Dict[str, Tile]
     def __init__(self, data):
         self.tileData = data
 
 class TileMap:
-    """2D Array of tiles, as integer indexes"""
+    """2D Array of tiles, as string indexes to a TileArray"""
     mapSize : Tuple[int] = (24,24)
     mapData : List[List[int]] = []
     tileMapping : TileArray
     active : bool = True
-    def __init__(self, size, data, mapping):
+    def __init__(self, size, data, mapping, npcs, loadingZones):
         self.mapSize = size
         self.mapData = data
         self.tileMapping = mapping
+
+        #Currently not implemented, but read in by readMapData
+        self.npcs = npcs
+        self.loadingZones = loadingZones
     def Update(self, consts, camera):
         """Draw Tiles. Needs a reference to the game's constants and the camera."""
         for y in range(self.mapSize[1]):
@@ -84,7 +88,7 @@ class TileMap:
                 except IndexError:
                     raise IndexError("map size larger than provided data")
                 try:
-                    tile = self.tileMapping[value]
+                    tile = self.tileMapping.tileData[value]
                 except IndexError:
                     raise IndexError("tile data index out of bounds")
         
@@ -108,7 +112,7 @@ class Input:
         pg.event.pump()
 class PlayerMove:
     """Component that controls the movement of an entity using inputs."""
-    speed : float = 16
+    speed : float = 32
     def __init__(self, speed):
         self.speed = speed
     def Update(self, inputs, position):
@@ -139,6 +143,32 @@ class PlayerMove:
         if position.posx == position.predictedposx and position.posy == position.predictedposy:
             position.moving = False
 
+def readTileData(dataStr, consts):
+    """Read in a file containing tile data, as specified in tilesFormat.md.
+    Requires a Consts object for tile size.
+    Returns a TileArray."""
+    tilesRaw = dataStr.split("\n\n")
+    outTiles = TileArray(dict())
+    for tileData in tilesRaw:
+        lines = tileData.split("\n")
+        outTiles.tileData[lines[0]] = Tile(pg.image.load(f"assets/art/tiles/{lines[1]}"), lines[2], consts)
+    return outTiles
+
+def readMapData(dataStr, tileMapping):
+    """Read in a file containing map data, as will be specified in mapsFormat.md.
+    Requires tile mapping data, as a TileArray.
+    Returns a TileMap."""
+    size, mapData, npcData, loadingZoneData = dataStr.split("\n\n")
+
+    sizeTuple = tuple(map(int, size.split(" ")))
+    mapDataArray = []
+    for y in range(sizeTuple[1]):
+        mapDataArray.append([])
+        for x in range(sizeTuple[0]):
+            mapDataArray[y].append(mapData.split("\n")[y][x])
+    return TileMap(sizeTuple, mapDataArray, tileMapping, npcData, loadingZoneData)
+    
+    
 
 class InputProcessor(esper.Processor):
     def process(self):

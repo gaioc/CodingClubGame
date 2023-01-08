@@ -92,7 +92,7 @@ class DialogText(DialogInstance):
         self.text = text
         self.playerOptions = playerOptions
         self.nextDialog = nextDialog
-        self.font = pg.font.SysFont("OpenSans Mono", 16)
+        self.font = pg.font.SysFont("OpenSans Mono", 28)
     
     def Activate(self):
         self.active = True
@@ -101,13 +101,13 @@ class DialogText(DialogInstance):
         self.btnHeld = True #used to make sure player does not accidentally skip dialogue
     def Update(self, screen: pg.Surface, inputs, textSpeed: int) -> int:
         #Draw dialog box
-        pg.draw.rect(screen, (0,0,0), pg.Rect(8, 379, 624, 96))
+        pg.draw.rect(screen, (30,30,30), pg.Rect(8, 379, 624, 96))
         #cls()
         #Draw text
         
         toDisplay = list(self.text[0:int(self.textInd+textSpeed)])
         
-        wrapping = 44
+        wrapping = 64
         
         for i in range(0, len(toDisplay), wrapping):
             printScr("".join(toDisplay[i:i+wrapping]), 16, 394+20*i//wrapping, (255,255,255), self.font, screen)
@@ -204,7 +204,7 @@ class Dialog:
 class Quest:
     """
     Container class that contains a quest name, and its completion status. 
-    (-1 is not taken, 0 is not completed, and 1 is completed.)
+    (-1 is not taken, 0 is not completed, and everything above that refers to individual stages of completion.)
     If a quest has multiple parts, track each part with an individual Quest object.
     """
     def __init__(self, name, status):
@@ -232,7 +232,6 @@ class Condition:
         """
         Always returns true. Useful for bottom priority dialogue.
         """
-        print("NOTIMPLEMENTED - UNSPECIFIED CONDITION")
         return True
 class MultipleAllConditions(Condition):
     def __init__(self, conditions):
@@ -256,6 +255,17 @@ class MultipleAnyConditions(Condition):
         Returns true if ANY conditions are met
         """
         return any([cond.verify(name, playerData) for cond in self.conditions])
+class NotCondition(Condition):
+    def __init__(self, condition):
+        """
+        Takes a Condition. Can be recursive in nature.
+        """
+        self.condition = condition
+    def verify(self, name, playerData):
+        """
+        Returns true if condition is NOT met.
+        """
+        return not(self.condition.verify(name, playerData))
 class QuestStatusCondition(Condition):
     def __init__(self, questName, questStatus):
         self.questName = questName
@@ -267,7 +277,7 @@ class QuestStatusCondition(Condition):
         if self.questName in playerData.questList.keys():
             return playerData.questList[self.questName] == self.questStatus
         else:
-                return self.questStatus == -1
+            return self.questStatus == -1
 class InventoryCondition(Condition):
     def __init__(self, itemName):
         self.itemName = itemName
@@ -344,8 +354,70 @@ class DialogProcessor(esper.Processor):
                 dial.Update(options.Screen, inputs, options.textSpeed)
         pg.display.flip()
 
+def parseCondition(conditionStr):
+    funcName = conditionStr.split("(")[0]
+    args = "(".join(conditionStr.split("(")[1:])[:-1]
 
+    if funcName == "FirstInteraction":
+        return FirstInteractionCondition()
+    elif funcName == "QuestStatus":
+        argList = args.split(", ")
+        return QuestStatusCondition(argList[0], int(argList[1]))
+    elif funcName == "HasItem":
+        return InventoryCondition(args)
+    elif funcName == "Auto":
+        return Condition()
+    elif funcName == "Not":
+        return NotCondition(parseCondition(args))
+    elif funcName == "Any":
+        layer = 0
+        argList = []
+        end = 0
+        for i in range(len(args)):
+            if args[i] == "(":
+                layer += 1
+            elif args[i] == ")":
+                layer -= 1
+            elif args[i] == "," and layer == 0:
+                argList.append(args[end:i])
+                end = i+2
+            if i == len(args) - 1:
+                argList.append(args[end:])
+        return MultipleAnyConditions([parseCondition(arg) for arg in argList])
+    elif funcName == "All":
+        layer = 0
+        argList = []
+        end = 0
+        for i in range(len(args)):
+            if args[i] == "(":
+                layer += 1
+            elif args[i] == ")":
+                layer -= 1
+            elif args[i] == "," and layer == 0:
+                argList.append(args[end:i])
+                end = i+2
+            if i == len(args) - 1:
+                argList.append(args[end:])
+        return MultipleAllConditions([parseCondition(arg) for arg in argList])
 
+def readNPCFile(npcFileContents, dialogDict):
+    """
+    Reads a string containing multiple formatted NPCBrains,
+    and returns a Dict object with their names and parsed content.
+    Needs an already parsed dict with dialog.
+    """
+    npcDict = dict()
+    # SPLIT FILE INTO INDIVIDUAL NPCBRAINS
+    rawNPCs = npcFileContents.split("\n\n")
+    for rawNPC in rawNPCs:
+        name = rawNPC.split("\n")[0]
+        lines = rawNPC.split("\n")[1:]
+        instances = []
+        for line in lines:
+            condition, dialog = line.split(": ")
+            instances.append(BrainInstance(parseCondition(condition), dialogDict[dialog]))
+        npcDict[name] = NPCBrain(name, instances)
+    return npcDict
 def readDialogFile(dialogFileContents):
     """
     Reads a string containing multiple formatted dialogs, 

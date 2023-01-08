@@ -24,6 +24,9 @@ ___
 #### `HasItem(item)`
 Returns True if `item` is in the player's inventory.
 ___
+#### `Auto()`
+Returns True, all the time.
+___
 #### `Any(conds...)` and `All(conds...)`
 Return True if any(`Any`) or all(`All`) of the above conditions (`conds`) are met.
 ___

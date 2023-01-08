@@ -44,7 +44,10 @@ The function might have arguments (`args`), in which case you would describe the
 
 #### A list of dialog functions and their implementation status
 - [Usable, No function] `HealPlayer`: heals party fully and replenishes TP
-- [Usable, No function] `GiveQuest [quest]`: gives player the quest with id `quest    `.
+- [Usable] `GiveQuest [quest]`: gives player the quest with id `quest`.
+- [Usable] `BumpQuest [quest]`: "bumps" the quest with id `quest`'s completion status up by one.
+- [Usable] `GiveItem [item]`: gives player an item with name `item`.
+- [Usable] `TakeItem [item]`: takes away an item with name `item` from player.
 
 ### Examples
 

@@ -188,8 +188,9 @@ class DialogText(DialogInstance):
                     # Reset dialog to original state
                     self.textInd = 0
                     self.btnHeld = True
+                    temp = self.chosenOption
                     self.chosenOption = 0
-                    return self.nextDialog[self.chosenOption]
+                    return self.nextDialog[temp]
                     self.btnHeld = True
                 elif inputs.buttons["up"]:
                     self.chosenOption = (self.chosenOption - 1) % len(self.playerOptions)

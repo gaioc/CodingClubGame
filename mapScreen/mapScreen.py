@@ -1,5 +1,5 @@
 #MAP SCREEN
-#(c) 2022, CORIN GAIOTTO IN CONJUNCTION WITH THE CHCI PROGRAMMING CLUB
+#(c) 2022, CHCI PROGRAMMING CLUB
 
 
 
@@ -7,6 +7,7 @@ import pygame as pg
 import esper
 from typing import Tuple, List, Dict
 import random
+import dialog.dialog as dialog
 clock = pg.time.Clock()
 class Consts:
     """Constants used throughout this demo"""
@@ -68,7 +69,7 @@ class TileArray:
 class TileMap:
     """2D Array of tiles, as string indexes to a TileArray"""
     mapSize : Tuple[int] = (24,24)
-    mapData : List[List[int]] = []
+    mapData : List[List[str]] = []
     tileMapping : TileArray
     active : bool = True
     def __init__(self, size, data, mapping, npcs, loadingZones):
@@ -115,23 +116,70 @@ class PlayerMove:
     speed : float = 32
     def __init__(self, speed):
         self.speed = speed
-    def Update(self, inputs, position):
+    def Update(self, inputs, position, tileMap, npcs, world, playerData):
         """Move player based on inputs. 
         Needs a reference to the player's position, and the inputs."""
         buttons = inputs.buttons
+        if not(all([btn in buttons for btn in ["up", "down", "left", "right"]])):
+            raise RuntimeError("Buttons not fully assigned")
         if not(position.moving):
-            if buttons["up"]:
-                position.predictedposy -= 32
-                position.moving = True
-            if buttons["down"]:
-                position.predictedposy += 32
-                position.moving = True
-            if buttons["left"]:
-                position.predictedposx -= 32
-                position.moving = True
-            if buttons["right"]:
-                position.predictedposx += 32
-                position.moving = True
+            try:
+                if buttons["up"] and tileMap.tileMapping.tileData[tileMap.mapData[position.predictedposy//32 - 1][position.predictedposx//32]].walkable:
+                    position.predictedposy -= 32
+                    position.moving = True
+                if buttons["down"] and tileMap.tileMapping.tileData[tileMap.mapData[position.predictedposy//32 + 1][position.predictedposx//32]].walkable:
+                    position.predictedposy += 32
+                    position.moving = True
+                if buttons["left"] and tileMap.tileMapping.tileData[tileMap.mapData[position.predictedposy//32][position.predictedposx//32 - 1]].walkable:
+                    position.predictedposx -= 32
+                    position.moving = True
+                if buttons["right"] and tileMap.tileMapping.tileData[tileMap.mapData[position.predictedposy//32][position.predictedposx//32 + 1]].walkable:
+                    position.predictedposx += 32
+                    position.moving = True
+            except IndexError:
+                print("OOB Prevented (or, something has gone horribly wrong)")
+                """
+                To whichever programmer is reading this:
+                I know this looks lazy. I know it looks horrible.
+                But bear with me. This is better than implementing many, many more checks,
+                and if maps are planned right, you should never run into it anyways.
+                It prevents a potentially bad crash in the most harmless of ways.
+                It only applies to a very specific OOB (out-of bounds) glitch which is already
+                covered AND FIXED below.
+                In short, this is a necessary evil we must take if we are to continue using
+                the heathen language known as Python. (no hate, but there was this one bug
+                that took me hours to fix because I mixed up string True and bool True)
+
+                P.S. At least it's the only possible source of IndexErrors in that snippet!
+                The rest are KeyErrors that might be raised if a TileMap uses a tile not defined in its TileMapping,
+                or KeyErrors if a button is not defined.
+                Things would be a lot worse if this obscured actual errors.
+                
+                Sincerely, 
+                Corin Gaiotto
+                """
+
+        
+        # Aforementioned OOB prevention
+        if position.predictedposx < 0:
+            position.predictedposx = 0
+        if position.predictedposy < 0:
+            position.predictedposy = 0
+        if position.predictedposx > tileMap.mapSize[0]*32:
+            position.predictedposx = tileMap.mapSize[0]*32
+        if position.predictedposy > tileMap.mapSize[1]*32:
+            position.predictedposy = tileMap.mapSize[1]*32
+
+        # NPC collision detection and interaction
+        for npc in npcs:
+            if position.predictedposx == npc[0].posx and position.predictedposy == npc[0].posy:
+                # Revert planned movement, stopping the player.
+                position.predictedposx = position.posx
+                position.predictedposy = position.posy
+                if buttons["confirm"]:
+                    npc[1].interact(world, playerData)
+    
+        
         if position.posx < position.predictedposx:
             position.posx += self.speed
         if position.posx > position.predictedposx:
@@ -142,6 +190,7 @@ class PlayerMove:
             position.posy -= self.speed
         if position.posx == position.predictedposx and position.posy == position.predictedposy:
             position.moving = False
+        #print(f"{tilePosition}")
 
 def readTileData(dataStr, consts):
     """Read in a file containing tile data, as specified in tilesFormat.md.
@@ -151,7 +200,7 @@ def readTileData(dataStr, consts):
     outTiles = TileArray(dict())
     for tileData in tilesRaw:
         lines = tileData.split("\n")
-        outTiles.tileData[lines[0]] = Tile(pg.image.load(f"assets/art/tiles/{lines[1]}"), lines[2], consts)
+        outTiles.tileData[lines[0]] = Tile(pg.image.load(f"assets/art/tiles/{lines[1]}"), (lines[2] == "True"), consts)
     return outTiles
 
 def readMapData(dataStr, tileMapping):
@@ -177,12 +226,18 @@ class InputProcessor(esper.Processor):
         inputs.pumpInput()
 class PlayerProcessor(esper.Processor):
     def process(self):
-        """Move player and camera."""
+        """Move player and camera, with respect to the current active TileMap."""
         inputs = self.world.get_component(Input)[0][1]
         consts = self.world.get_component(Consts)[0][1]
         camera = self.world.get_component(Camera)[0][1]
+        npcs = [npc[1] for npc in self.world.get_components(Position, dialog.NPCBrain)]
+        playerData = self.world.get_component(dialog.PlayerData)[0][1]
+        for tileMapEntity in self.world.get_component(TileMap):
+            if tileMapEntity[1].active:
+                currentMap = tileMapEntity[1]
+                break
         player, position = self.world.get_components(PlayerMove, Position)[0][1]
-        player.Update(inputs, position)
+        player.Update(inputs, position, currentMap, npcs, self.world, playerData)
         camera.xpos = position.posx-consts.screenSize[0]/2
         camera.ypos = position.posy-consts.screenSize[1]/2
 class GraphicsProcessor(esper.Processor):

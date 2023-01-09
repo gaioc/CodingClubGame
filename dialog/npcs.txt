@@ -9,3 +9,7 @@ Teacher
 FirstInteraction(): Teacher First Interaction
 QuestStatus(FixHealingPlace, 0): Teacher Healing Place Commentary
 Auto(): Teacher Advice
+
+Suspicious <Location>
+FirstInteraction(): Give <Item>
+Auto(): Empty <Location>

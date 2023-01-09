@@ -58,12 +58,7 @@ with open("mapScreen/maps/testMap.txt") as mapRaw:
 
 testMap = world.create_entity(mapData)
 
-player = world.create_entity(mapScreen.Position(0,0), 
-                             mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/player.png")),
-                            mapScreen.PlayerMove(4))
 
-bobTheNpc = world.create_entity(mapScreen.Position(64,64),
-                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/npc.png")))
 
 #Configure Options
 world.create_entity(dialog.Options(world.component_for_entity(consts,mapScreen.Consts).screen, int(input("Enter text speed: (1-10)"))/4))
@@ -76,12 +71,22 @@ with open("dialog/dialog.txt") as dialogData:
 with open("dialog/npcs.txt") as npcData:
     npcDict = dialog.readNPCFile(npcData.read(), dialogDict)
 
-playerData = world.create_entity(dialog.PlayerData(["<Item>"], dict({"FixHealingPlace":0}), ["Bobby", "Teacher"]))
+playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), []))
 
 
-testNPC = npcDict["Bobby"]
+player = world.create_entity(mapScreen.Position(32,32), 
+                             mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/player.png")),
+                            mapScreen.PlayerMove(4))
 
-
+bobbyTheNpc = world.create_entity(mapScreen.Position(64,64),
+                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/npc.png")),
+                               npcDict["Bobby"])
+teacherNPC = world.create_entity(mapScreen.Position(128,192),
+                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/npc.png")),
+                               npcDict["Teacher"])
+locationNPC = world.create_entity(mapScreen.Position(160,320),
+                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/placeholder.png")),
+                               npcDict["Suspicious <Location>"])
 
 
 world.add_processor(mapScreen.InputProcessor(), priority=10)
@@ -90,18 +95,6 @@ world.add_processor(mapScreen.GraphicsProcessor(), priority=1)
 world.add_processor(dialog.DialogProcessor(), priority=0)
 
 
-for x in range(30):
-    world.process()
-    pg.display.flip()
-    clock.tick(30) #technically configurable: can run fine at 60, suffers from frame drops if you go higher
-    #print(clock.get_fps()) #see console for performance
-testNPC.interact(world, world.component_for_entity(playerData, dialog.PlayerData))
-for x in range(300):
-    world.process()
-    pg.display.flip()
-    clock.tick(30) #technically configurable: can run fine at 60, suffers from frame drops if you go higher
-    #print(clock.get_fps()) #see console for performance
-testNPC.interact(world, world.component_for_entity(playerData, dialog.PlayerData))
 
 while 1:
     world.process()

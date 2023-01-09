@@ -44,6 +44,17 @@ Teacher Healing Place Commentary
 Teacher: I heard from Bobby that you're helping him fix that healing place of his. Good on you!||1
 Teacher: Just so you know, you can find <Item> in <Location>. Hope this helps!||-2
 
+Give <Item>
+In this pile of moss, you see what looks like an <Item>.||1
+You fish it out and wash your hands.||2
+\GiveItem <Item>||3
+<Item> acquired!||-2
+
+Empty <Location>
+There's nothing here but a pile of moss. Eat some?|Yes,No|1,2
+You are enlightened.||-2
+You decide not to push your luck.||-2
+
 Kaepora Gaebora Monologue
 Hoo hoot! Link... Look up here!||1
 It appears that the time has finally come for you to start your adventure!||2

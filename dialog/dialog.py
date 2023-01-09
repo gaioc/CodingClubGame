@@ -73,7 +73,7 @@ class DialogGiveQuest(DialogInstance):
         """
         Give the player a quest.
         """
-        if self.questID not in playerData or playerData.questList[self.questID] == -1:
+        if self.questID not in playerData.questList or playerData.questList[self.questID] == -1:
             playerData.questList[self.questID] = 0
         return self.next
 
@@ -226,8 +226,9 @@ class Dialog:
     active : bool = False
     def __init__(self, texts: List[DialogInstance]):
         self.texts = texts
-    def Activate(self):
+    def Activate(self, npcName):
         self.active = True
+        self.npcName = npcName
         self.dialogIndex = 0
     def Update(self, screen, inputs, textSpeed, playerData) -> int:
         #Update current DialogInstance
@@ -238,6 +239,8 @@ class Dialog:
         if result == -2:
             #Code -2 means end of dialog
             self.active = False
+            if not(self.npcName in playerData.npcsInteractedWith):
+                playerData.npcsInteractedWith.append(self.npcName)
             return -2
         if result == -1:
             #Code -1 means continue
@@ -380,16 +383,16 @@ class NPCBrain:
         Needs a reference to the game world to interact with it and create an entity. Returns said entity.
         """
         currentDialog = self.fetchCurrent(playerData)
+        
 
         #NOT IMPLEMENTED: TURN OFF PLAYER MOVEMENT SCRIPT
 
         dialogEntity = world.create_entity(currentDialog)
         
-        currentDialog.Activate()
-
+        currentDialog.Activate(self.name)
+        
         return dialogEntity
         
-    
 
 
 class DialogProcessor(esper.Processor):

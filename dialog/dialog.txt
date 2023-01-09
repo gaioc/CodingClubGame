@@ -38,6 +38,7 @@ Teacher First Interaction
 Teacher:Hello! I haven't seen you around here!||-2
 
 Teacher Advice
+Teacher:Hello there!||1
 Teacher:If you are tired, make sure to go rest at the Hub.||-2
 
 Teacher Healing Place Commentary

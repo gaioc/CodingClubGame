@@ -185,6 +185,10 @@ class DialogText(DialogInstance):
                     else:
                         return -1
                 if inputs.buttons["confirm"]:
+                    # Reset dialog to original state
+                    self.textInd = 0
+                    self.btnHeld = True
+                    self.chosenOption = 0
                     return self.nextDialog[self.chosenOption]
                     self.btnHeld = True
                 elif inputs.buttons["up"]:
@@ -207,6 +211,10 @@ class DialogText(DialogInstance):
                         self.btnHeld = False
                     return -1
                 if inputs.buttons["confirm"]:
+                    # Reset dialog to original state
+                    self.textInd = 0
+                    self.btnHeld = True
+                    self.chosenOption = 0
                     return self.nextDialog[0]
                 else:
                     return -1
@@ -239,6 +247,7 @@ class Dialog:
         if result == -2:
             #Code -2 means end of dialog
             self.active = False
+            self.dialogIndex = 0
             if not(self.npcName in playerData.npcsInteractedWith):
                 playerData.npcsInteractedWith.append(self.npcName)
             return -2

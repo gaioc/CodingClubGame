@@ -1,0 +1,23 @@
+28 16
+
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WggggggggggggggggggggggggggW
+WggggggggggggggggggggggggggW
+WggggggggggggggggggggggggggW
+gggggggggggggggggggggggggggg
+gggggggggggggggggggggggggggg
+gggggggggggggggggggggggggggg
+gggggggggggggggggggggggggggg
+gggggggggggggggggggggggggggg
+gggggggggggggggggggggggggggg
+gggggggggggggggggggggggggggg
+gggggggggggggggggggggggggggg
+gggggggggggggggggggggggggggg
+gggggggggggggggggggggggggggg
+gggggggggggggggggggggggggggg
+gggggggggggggggggggggggggggg
+
+4 4 npc1
+
+10 1 loadingzone1
+11 1 loadingzone1

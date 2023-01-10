@@ -78,15 +78,15 @@ player = world.create_entity(mapScreen.Position(32,32),
                              mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/player.png")),
                             mapScreen.PlayerMove(4))
 
-bobbyTheNpc = world.create_entity(mapScreen.Position(64,64),
-                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/npc.png")),
-                               npcDict["Bobby"])
-teacherNPC = world.create_entity(mapScreen.Position(128,192),
-                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/npc.png")),
-                               npcDict["Teacher"])
-locationNPC = world.create_entity(mapScreen.Position(160,320),
-                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/placeholder.png")),
-                               npcDict["Suspicious <Location>"])
+#bobbyTheNpc = world.create_entity(mapScreen.Position(64,64),
+#                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/npc.png")),
+#                               npcDict["Bobby"])
+#teacherNPC = world.create_entity(mapScreen.Position(128,192),
+#                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/npc.png")),
+#                               npcDict["Teacher"])
+#locationNPC = world.create_entity(mapScreen.Position(160,320),
+#                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/placeholder.png")),
+#                               npcDict["Suspicious <Location>"])
 
 
 world.add_processor(mapScreen.InputProcessor(), priority=10)

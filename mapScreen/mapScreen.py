@@ -9,6 +9,15 @@ from typing import Tuple, List, Dict
 import random
 import dialog.dialog as dialog
 clock = pg.time.Clock()
+
+def clamp(n, nmin, nmax):
+    """Clamp value to constraints"""
+    if n<nmin:
+        n = nmin
+    if n>nmax:
+        n = nmax
+    return n
+
 class Consts:
     """Constants used throughout this demo"""
     tileSize : int = 32
@@ -238,8 +247,16 @@ class PlayerProcessor(esper.Processor):
                 break
         player, position = self.world.get_components(PlayerMove, Position)[0][1]
         player.Update(inputs, position, currentMap, npcs, self.world, playerData)
-        camera.xpos = position.posx-consts.screenSize[0]/2
-        camera.ypos = position.posy-consts.screenSize[1]/2
+        if consts.screenSize[0] > currentMap.mapSize[0]*32:
+            camera.xpos = currentMap.mapSize[0]*16-consts.screenSize[0]/2
+        else:
+            camera.xpos = clamp(position.posx, consts.screenSize[0]/2, currentMap.mapSize[0]*32-consts.screenSize[0]/2) - consts.screenSize[0]/2 - 16
+        if consts.screenSize[1] > currentMap.mapSize[1]*32:
+            camera.ypos = currentMap.mapSize[1]*16-consts.screenSize[1]/2
+        else:
+            camera.ypos = clamp(position.posy, consts.screenSize[1]/2, currentMap.mapSize[1]*32-consts.screenSize[1]/2) - consts.screenSize[1]/2 - 16
+        
+        
 class GraphicsProcessor(esper.Processor):
     def process(self):
         """Draw graphics, layer by layer. Layers are separated by comments."""

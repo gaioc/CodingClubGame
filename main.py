@@ -52,14 +52,6 @@ camera = world.create_entity(mapScreen.Camera(0,0))
 with open("mapScreen/tiles.txt") as tileRaw:
     tileMapping = mapScreen.readTileData(tileRaw.read(), world.component_for_entity(consts, mapScreen.Consts))
 
-with open("mapScreen/maps/testMap.txt") as mapRaw:
-    # You can try changing testMap.txt to see the effect on the result!
-    mapData = mapScreen.readMapData(mapRaw.read(), tileMapping)
-
-testMap = world.create_entity(mapData)
-
-
-
 #Configure Options
 world.create_entity(dialog.Options(world.component_for_entity(consts,mapScreen.Consts).screen, int(input("Enter text speed: (1-10)"))/4))
 
@@ -71,22 +63,23 @@ with open("dialog/dialog.txt") as dialogData:
 with open("dialog/npcs.txt") as npcData:
     npcDict = dialog.readNPCFile(npcData.read(), dialogDict)
 
+
+with open("mapScreen/maps/testMap.txt") as mapRaw:
+    # You can try changing testMap.txt to see the effect on the result!
+    mapData = mapScreen.readMapData(mapRaw.read(), tileMapping, npcDict)
+
+testMap = world.create_entity(mapData)
+world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
+
+
+
+
 playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), []))
 
 
 player = world.create_entity(mapScreen.Position(32,32), 
                              mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/player.png")),
                             mapScreen.PlayerMove(4))
-
-#bobbyTheNpc = world.create_entity(mapScreen.Position(64,64),
-#                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/npc.png")),
-#                               npcDict["Bobby"])
-#teacherNPC = world.create_entity(mapScreen.Position(128,192),
-#                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/npc.png")),
-#                               npcDict["Teacher"])
-#locationNPC = world.create_entity(mapScreen.Position(160,320),
-#                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/placeholder.png")),
-#                               npcDict["Suspicious <Location>"])
 
 
 world.add_processor(mapScreen.InputProcessor(), priority=10)

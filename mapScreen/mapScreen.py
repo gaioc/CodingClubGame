@@ -80,15 +80,20 @@ class TileMap:
     mapSize : Tuple[int] = (24,24)
     mapData : List[List[str]] = []
     tileMapping : TileArray
-    active : bool = True
+    active : bool = False
     def __init__(self, size, data, mapping, npcs, loadingZones):
         self.mapSize = size
         self.mapData = data
         self.tileMapping = mapping
+        self.active = False
+        self.npcs = npcs
 
         #Currently not implemented, but read in by readMapData
-        self.npcs = npcs
         self.loadingZones = loadingZones
+    def Activate(self, world):
+        self.active = True
+        for npc in self.npcs:
+            world.create_entity(npc[0], npc[1], SpriteRenderer(pg.image.load(f"assets/art/sprites/{npc[2]}")))
     def Update(self, consts, camera):
         """Draw Tiles. Needs a reference to the game's constants and the camera."""
         for y in range(self.mapSize[1]):
@@ -212,7 +217,7 @@ def readTileData(dataStr, consts):
         outTiles.tileData[lines[0]] = Tile(pg.image.load(f"assets/art/tiles/{lines[1]}"), (lines[2] == "True"), consts)
     return outTiles
 
-def readMapData(dataStr, tileMapping):
+def readMapData(dataStr, tileMapping, npcDict):
     """Read in a file containing map data, as will be specified in mapsFormat.md.
     Requires tile mapping data, as a TileArray.
     Returns a TileMap."""
@@ -224,7 +229,13 @@ def readMapData(dataStr, tileMapping):
         mapDataArray.append([])
         for x in range(sizeTuple[0]):
             mapDataArray[y].append(mapData.split("\n")[y][x])
-    return TileMap(sizeTuple, mapDataArray, tileMapping, npcData, loadingZoneData)
+    npcs = []
+    for npc in npcData.split("\n"):
+        npcX, npcY = npc.split("|")[:2]
+        npcBrain = npcDict[npc.split("|")[2]]
+        sprite = npc.split("|")[3]
+        npcs.append((Position(int(npcX)*32, int(npcY)*32), npcBrain, sprite))
+    return TileMap(sizeTuple, mapDataArray, tileMapping, npcs, loadingZoneData)
     
     
 
@@ -241,10 +252,13 @@ class PlayerProcessor(esper.Processor):
         camera = self.world.get_component(Camera)[0][1]
         npcs = [npc[1] for npc in self.world.get_components(Position, dialog.NPCBrain)]
         playerData = self.world.get_component(dialog.PlayerData)[0][1]
+        currentMap = None
         for tileMapEntity in self.world.get_component(TileMap):
             if tileMapEntity[1].active:
                 currentMap = tileMapEntity[1]
                 break
+        if not(currentMap):
+            return 0
         player, position = self.world.get_components(PlayerMove, Position)[0][1]
         player.Update(inputs, position, currentMap, npcs, self.world, playerData)
         if consts.screenSize[0] > currentMap.mapSize[0]*32:

@@ -25,5 +25,4 @@ WWFWWWWW
 4|6|Teacher|npc.png
 5|10|Suspicious <Location>|placeholder.png
 
-2|0|loadingzone1
-2|19|loadingzone2
+2|19|mainHall|9|1

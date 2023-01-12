@@ -9,6 +9,16 @@ from typing import Tuple, List, Dict
 import random
 import dialog.dialog as dialog
 clock = pg.time.Clock()
+
+def clamp(n, nmin, nmax):
+    """Clamp value to constraints"""
+    if n<nmin:
+        n = nmin
+    if n>nmax:
+        n = nmax
+    return n
+
+
 class Consts:
     """Constants used throughout this demo"""
     tileSize : int = 32
@@ -71,15 +81,24 @@ class TileMap:
     mapSize : Tuple[int] = (24,24)
     mapData : List[List[str]] = []
     tileMapping : TileArray
-    active : bool = True
+    active : bool = False
     def __init__(self, size, data, mapping, npcs, loadingZones):
         self.mapSize = size
         self.mapData = data
         self.tileMapping = mapping
-
-        #Currently not implemented, but read in by readMapData
+        self.active = False
         self.npcs = npcs
         self.loadingZones = loadingZones
+    def Activate(self, world):
+        """Set active to `True` and spawn NPCs. Needs a reference to the world to spawn NPCs."""
+        self.active = True
+        for npc in self.npcs:
+            world.create_entity(npc[0], npc[1], SpriteRenderer(pg.image.load(f"assets/art/sprites/{npc[2]}")))
+    def Deactivate(self, world):
+        """Removes all NPCs and sets active to `False`. Needs a reference to the world to remove NPCs."""
+        self.active = False
+        for id, npc in world.get_component(dialog.NPCBrain):
+            world.delete_entity(id)
     def Update(self, consts, camera):
         """Draw Tiles. Needs a reference to the game's constants and the camera."""
         for y in range(self.mapSize[1]):
@@ -96,6 +115,45 @@ class TileMap:
                 rect = tile.tileSprite.get_rect()
                 rect.center = x*consts.tileSize - camera.xpos, y*consts.tileSize - camera.ypos
                 consts.screen.blit(tile.tileSprite, rect)
+
+def loadMap(world, mapsDict, mapName, npcDict, tileMapping):
+    """
+    Loads map given by mapName. 
+    Only fully loads map if map didn't already exist,
+    to save processing power, otherwise only NPCs are reloaded.
+    """
+
+    # Deactivate all maps
+    for name, data in mapsDict.items():
+        data.Deactivate(world)
+
+    # Activate selected map
+    if mapName in mapsDict.keys():
+        # case 1: map has already been loaded, activate it
+        mapsDict[mapName].Activate(world)
+    else:
+        # case 2: map is new, read and load it
+        with open(f"mapScreen/maps/{mapName}.txt") as mapFile:
+            mapData = readMapData(mapFile.read(), tileMapping, npcDict)
+        mapsDict[mapName] = mapData
+        world.create_entity(mapsDict[mapName])
+        mapData.Activate(world)
+        
+    
+
+class MapHolder(Dict):
+    """Component that holds a Dict of maps."""
+    def __init__(self, data):
+        super().__init__(data)
+class NPCHolder(Dict):
+    """Component that holds a Dict of NPC information."""
+    def __init__(self, data):
+        super().__init__(data)
+class TileArrayComponent():
+    """Component that holds a TileArray object."""
+    def __init__(self, tileArray):
+        self.data = tileArray
+
 
 class Input:
     """Component that internally processes input. Is configurable"""
@@ -119,6 +177,12 @@ class PlayerMove:
     def Update(self, inputs, position, tileMap, npcs, world, playerData):
         """Move player based on inputs. 
         Needs a reference to the player's position, and the inputs."""
+
+        loadedMaps = world.get_component(MapHolder)[0][1]
+        npcDict = world.get_component(NPCHolder)[0][1]
+        tileMapping = world.get_component(TileArrayComponent)[0][1].data
+        
+        
         buttons = inputs.buttons
         if not(all([btn in buttons for btn in ["up", "down", "left", "right"]])):
             raise RuntimeError("Buttons not fully assigned")
@@ -178,7 +242,19 @@ class PlayerMove:
                 position.predictedposy = position.posy
                 if buttons["confirm"]:
                     npc[1].interact(world, playerData)
-    
+
+        # Loading zone collision detection and activation
+        loadingZones = tileMap.loadingZones
+        for loadingZone in loadingZones:
+            if position.predictedposx == loadingZone[0].posx and position.predictedposy == loadingZone[0].posy:
+                # Load map, move to specified position, return early
+                loadMap(world, loadedMaps, loadingZone[1], npcDict, tileMapping)
+                position.posx = loadingZone[2].posx
+                position.posy = loadingZone[2].posy
+                position.predictedposx = position.posx
+                position.predictedposy = position.posy
+                return 0
+        
         
         if position.posx < position.predictedposx:
             position.posx += self.speed
@@ -203,7 +279,7 @@ def readTileData(dataStr, consts):
         outTiles.tileData[lines[0]] = Tile(pg.image.load(f"assets/art/tiles/{lines[1]}"), (lines[2] == "True"), consts)
     return outTiles
 
-def readMapData(dataStr, tileMapping):
+def readMapData(dataStr, tileMapping, npcDict):
     """Read in a file containing map data, as will be specified in mapsFormat.md.
     Requires tile mapping data, as a TileArray.
     Returns a TileMap."""
@@ -215,7 +291,22 @@ def readMapData(dataStr, tileMapping):
         mapDataArray.append([])
         for x in range(sizeTuple[0]):
             mapDataArray[y].append(mapData.split("\n")[y][x])
-    return TileMap(sizeTuple, mapDataArray, tileMapping, npcData, loadingZoneData)
+    npcs = []
+    for npc in npcData.split("\n"):
+        if npc:
+            npcX, npcY = npc.split("|")[:2]
+            npcBrain = npcDict[npc.split("|")[2]]
+            sprite = npc.split("|")[3]
+            npcs.append((Position(int(npcX)*32, int(npcY)*32), npcBrain, sprite))
+    
+    finalZones = []
+    for loadingZone in loadingZoneData.split("\n"):
+        startX, startY = loadingZone.split("|")[:2]
+        destination = loadingZone.split("|")[2]
+        endX, endY = loadingZone.split("|")[3:]
+        finalZones.append((Position(int(startX)*32, int(startY)*32), destination, Position(int(endX)*32, int(endY)*32)))
+    
+    return TileMap(sizeTuple, mapDataArray, tileMapping, npcs, finalZones)
     
     
 
@@ -232,14 +323,25 @@ class PlayerProcessor(esper.Processor):
         camera = self.world.get_component(Camera)[0][1]
         npcs = [npc[1] for npc in self.world.get_components(Position, dialog.NPCBrain)]
         playerData = self.world.get_component(dialog.PlayerData)[0][1]
+        currentMap = None
         for tileMapEntity in self.world.get_component(TileMap):
             if tileMapEntity[1].active:
                 currentMap = tileMapEntity[1]
                 break
+        if not(currentMap):
+            return 0
         player, position = self.world.get_components(PlayerMove, Position)[0][1]
         player.Update(inputs, position, currentMap, npcs, self.world, playerData)
-        camera.xpos = position.posx-consts.screenSize[0]/2
-        camera.ypos = position.posy-consts.screenSize[1]/2
+        if consts.screenSize[0] > currentMap.mapSize[0]*32:
+            camera.xpos = currentMap.mapSize[0]*16-consts.screenSize[0]/2
+        else:
+            camera.xpos = clamp(position.posx, consts.screenSize[0]/2, currentMap.mapSize[0]*32-consts.screenSize[0]/2) - consts.screenSize[0]/2 - 16
+        if consts.screenSize[1] > currentMap.mapSize[1]*32:
+            camera.ypos = currentMap.mapSize[1]*16-consts.screenSize[1]/2
+        else:
+            camera.ypos = clamp(position.posy, consts.screenSize[1]/2, currentMap.mapSize[1]*32-consts.screenSize[1]/2) - consts.screenSize[1]/2 - 16
+        
+        
 class GraphicsProcessor(esper.Processor):
     def process(self):
         """Draw graphics, layer by layer. Layers are separated by comments."""

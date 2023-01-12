@@ -1,12 +1,16 @@
-F
+g
 grass.png
 True
+
+G
+grass.png
+False
 
 S
 shallow.png
 False
 
-f
+F
 temp_floor.png
 True
 

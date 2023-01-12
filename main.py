@@ -51,15 +51,7 @@ camera = world.create_entity(mapScreen.Camera(0,0))
 #Testing tile data reading
 with open("mapScreen/tiles.txt") as tileRaw:
     tileMapping = mapScreen.readTileData(tileRaw.read(), world.component_for_entity(consts, mapScreen.Consts))
-
-with open("mapScreen/maps/testMap.txt") as mapRaw:
-    # You can try changing testMap.txt to see the effect on the result!
-    mapData = mapScreen.readMapData(mapRaw.read(), tileMapping)
-
-testMap = world.create_entity(mapData)
-
-
-
+world.create_entity(mapScreen.TileArrayComponent(tileMapping))
 #Configure Options
 world.create_entity(dialog.Options(world.component_for_entity(consts,mapScreen.Consts).screen, int(input("Enter text speed: (1-10)"))/4))
 
@@ -70,23 +62,25 @@ with open("dialog/dialog.txt") as dialogData:
 #Read NPC File
 with open("dialog/npcs.txt") as npcData:
     npcDict = dialog.readNPCFile(npcData.read(), dialogDict)
+world.create_entity(mapScreen.NPCHolder(npcDict))
+
+with open("mapScreen/maps/testMap.txt") as mapRaw:
+    # You can try changing testMap.txt to see the effect on the result!
+    mapDict = mapScreen.MapHolder({"testMap":mapScreen.readMapData(mapRaw.read(), tileMapping, npcDict)})
+    world.create_entity(mapDict)
+
+testMap = world.create_entity(mapDict["testMap"])
+world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
+
+
+
 
 playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), []))
 
 
 player = world.create_entity(mapScreen.Position(32,32), 
                              mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/player.png")),
-                            mapScreen.PlayerMove(4))
-
-bobbyTheNpc = world.create_entity(mapScreen.Position(64,64),
-                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/npc.png")),
-                               npcDict["Bobby"])
-teacherNPC = world.create_entity(mapScreen.Position(128,192),
-                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/npc.png")),
-                               npcDict["Teacher"])
-locationNPC = world.create_entity(mapScreen.Position(160,320),
-                               mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/placeholder.png")),
-                               npcDict["Suspicious <Location>"])
+                            mapScreen.PlayerMove(8))
 
 
 world.add_processor(mapScreen.InputProcessor(), priority=10)

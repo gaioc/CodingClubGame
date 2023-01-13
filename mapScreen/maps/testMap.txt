@@ -23,6 +23,6 @@ WWFWWWWW
 
 2|2|Bobby|npc.png
 4|6|Teacher|npc.png
-5|10|Suspicious <Location>|placeholder.png
+5|10|Suspicious <Location>|moss.png
 
 2|19|mainHall|9|1

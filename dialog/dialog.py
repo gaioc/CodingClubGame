@@ -5,7 +5,7 @@ import esper
 from dataclass import dataclass
 from typing import List, Dict, Tuple
 import pathlib
-from mapScreen.mapScreen import Input
+from mapScreen.mapScreen import Input, PlayerMove
 
 #PYGAME DEPENDENCIES
 pg.font.init()
@@ -239,7 +239,7 @@ class Dialog:
         self.active = True
         self.npcName = npcName
         self.dialogIndex = 0
-    def Update(self, screen, inputs, textSpeed, playerData) -> int:
+    def Update(self, screen, inputs, textSpeed, playerData, world) -> int:
         #Update current DialogInstance
         try:
             result = self.texts[self.dialogIndex].Update(screen, inputs, textSpeed, playerData)
@@ -251,6 +251,9 @@ class Dialog:
             self.dialogIndex = 0
             if not(self.npcName in playerData.npcsInteractedWith):
                 playerData.npcsInteractedWith.append(self.npcName)
+            
+            world.get_component(PlayerMove)[0][1].Activate()
+            
             return -2
         if result == -1:
             #Code -1 means continue
@@ -415,7 +418,7 @@ class DialogProcessor(esper.Processor):
         playerData = self.world.get_component(PlayerData)[0][1]
         for ent, dial in self.world.get_component(Dialog):
             if dial.active:
-                dial.Update(options.Screen, inputs, options.textSpeed, playerData)
+                dial.Update(options.Screen, inputs, options.textSpeed, playerData, self.world)
         pg.display.flip()
 
 def parseCondition(conditionStr):

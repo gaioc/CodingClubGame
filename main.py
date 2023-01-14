@@ -29,10 +29,10 @@ world = esper.World()
 
 
 inputs = world.create_entity(mapScreen.Input({
-    "up":[pg.K_UP],
-    "down":[pg.K_DOWN],
-    "left":[pg.K_LEFT],
-    "right":[pg.K_RIGHT],
+    "up":[pg.K_UP, pg.K_w],
+    "down":[pg.K_DOWN, pg.K_s],
+    "left":[pg.K_LEFT, pg.K_a],
+    "right":[pg.K_RIGHT, pg.K_d],
     "confirm":[pg.K_z, pg.K_RETURN],
     "cancel":[pg.K_x, pg.K_LSHIFT, pg.K_RSHIFT]
 }))

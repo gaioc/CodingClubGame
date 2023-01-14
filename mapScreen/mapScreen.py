@@ -172,8 +172,13 @@ class Input:
 class PlayerMove:
     """Component that controls the movement of an entity using inputs."""
     speed : float = 32
+    active : bool = True
     def __init__(self, speed):
         self.speed = speed
+    def Activate(self):
+        self.active = True
+    def Deactivate(self):
+        self.active = False
     def Update(self, inputs, position, tileMap, npcs, world, playerData):
         """Move player based on inputs. 
         Needs a reference to the player's position, and the inputs."""
@@ -241,6 +246,7 @@ class PlayerMove:
                 position.predictedposx = position.posx
                 position.predictedposy = position.posy
                 if buttons["confirm"]:
+                    self.Deactivate()
                     npc[1].interact(world, playerData)
 
         # Loading zone collision detection and activation
@@ -331,7 +337,8 @@ class PlayerProcessor(esper.Processor):
         if not(currentMap):
             return 0
         player, position = self.world.get_components(PlayerMove, Position)[0][1]
-        player.Update(inputs, position, currentMap, npcs, self.world, playerData)
+        if player.active:
+            player.Update(inputs, position, currentMap, npcs, self.world, playerData)
         if consts.screenSize[0] > currentMap.mapSize[0]*32:
             camera.xpos = currentMap.mapSize[0]*16-consts.screenSize[0]/2
         else:

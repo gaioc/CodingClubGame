@@ -1,0 +1,44 @@
+24 16
+
+gggFWWWWWWWWWWWWWWWWFggg
+gggFWWWWWWWWWWWWWWWWFggg
+gggFWWWWWWWWWWWWWWWWFggg
+gggFWWWWWWWWWWWWWWWWFggg
+gggFWWWWWWWWWWWWWWWWFggg
+ggggFFFFFFFFFFFFFFFFgggg
+gggggggggggggggggggggggg
+gggggggggggggggggggggggg
+ggggFFFFFggggggFFFFFgggg
+gggggggggggggggggggggggg
+ggggFFFFFggggggFFFFFgggg
+gggggggggggggggggggggggg
+ggggFFFFFggggggFFFFFgggg
+Fggggggggggggggggggggggg
+ggggFFFFFggggggFFFFFgggg
+gggggggggggggggggggggggg
+
+4|12|Panicked Student 1|npc.png
+7|12|Panicked Student 3|npc.png
+8|12|Panicked Student 2|npc.png
+15|12|Panicked Student 3|npc.png
+16|12|Panicked Student 1|npc.png
+19|12|Panicked Student 1|npc.png
+6|14|Panicked Student 2|npc.png
+8|14|Panicked Student 2|npc.png
+15|14|Panicked Student 1|npc.png
+17|14|Panicked Student 3|npc.png
+19|14|Panicked Student 2|npc.png
+3|11|Panicked Student 3|npc.png
+6|10|Panicked Student 1|npc.png
+8|10|Panicked Student 2|npc.png
+16|9|Panicked Student 2|npc.png
+17|10|Panicked Student 3|npc.png
+20|10|Panicked Student 3|npc.png
+4|8|Panicked Student 2|npc.png
+6|7|Panicked Student 1|npc.png
+8|8|Panicked Student 2|npc.png
+15|9|Panicked Student 1|npc.png
+18|8|Panicked Student 1|npc.png
+19|8|Panicked Student 1|npc.png
+
+0|13|mainHall|18|9

@@ -1,3 +1,12 @@
+Panicked Student 1
+I can't believe Scotty got captured!||-2
+
+Panicked Student 2
+What are we going to do now?||-2
+
+Panicked Student 3
+What was that thing?!||-2
+
 Healing Place Interaction
 Bobby:Hello!||1
 Bobby:Welcome to the healing place!||2

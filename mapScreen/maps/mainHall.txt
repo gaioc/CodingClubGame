@@ -23,6 +23,8 @@ WWWWWWWWWFFWWWWWWWWW
 
 4|8|Teacher|npc.png
 
+
+
 9|19|openingArea|13|2
 10|19|openingArea|14|2
 9|0|testMap|2|18

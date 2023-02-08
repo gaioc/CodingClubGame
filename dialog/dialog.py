@@ -53,7 +53,7 @@ class DialogHealPlayer(DialogInstance):
         self.next = next
     def Activate(self):
         self.active = True
-    def Update(self, screen, inputs, textSpeed, playerData):
+    def Update(self, screen, inputs, textSpeed, playerData, world):
         """
         Heal the player's party to full and restore TP.
         """
@@ -69,7 +69,7 @@ class DialogGiveQuest(DialogInstance):
         self.next = next
     def Activate(self):
         self.active = True
-    def Update(self, screen, inputs, textSpeed, playerData):
+    def Update(self, screen, inputs, textSpeed, playerData, world):
         """
         Give the player a quest.
         """
@@ -86,7 +86,7 @@ class DialogBumpQuest(DialogInstance):
         self.next = next
     def Activate(self):
         self.active = True
-    def Update(self, screen, inputs, textSpeed, playerData):
+    def Update(self, screen, inputs, textSpeed, playerData, world):
         """
         Bump a quest's level of completion up by one.
         """
@@ -102,7 +102,7 @@ class DialogTakeItem(DialogInstance):
         self.next = next
     def Activate(self):
         self.active = True
-    def Update(self, screen, inputs, textSpeed, playerData):
+    def Update(self, screen, inputs, textSpeed, playerData, world):
         """
         Take an item from player inventory
         """
@@ -117,7 +117,7 @@ class DialogGiveItem(DialogInstance):
         self.next = next
     def Activate(self):
         self.active = True
-    def Update(self, screen, inputs, textSpeed, playerData):
+    def Update(self, screen, inputs, textSpeed, playerData, world):
         """
         Give an item to player inventory
         """
@@ -149,7 +149,7 @@ class DialogText(DialogInstance):
         self.textInd = 0
         self.chosenOption = 0
         self.btnHeld = True #used to make sure player does not accidentally skip dialogue
-    def Update(self, screen: pg.Surface, inputs, textSpeed: int, playerData) -> int:
+    def Update(self, screen: pg.Surface, inputs, textSpeed: int, playerData, world) -> int:
         #Draw dialog box
         pg.draw.rect(screen, (30,30,30), pg.Rect(8, 379, 624, 96))
         #cls()
@@ -242,7 +242,7 @@ class Dialog:
     def Update(self, screen, inputs, textSpeed, playerData, world) -> int:
         #Update current DialogInstance
         try:
-            result = self.texts[self.dialogIndex].Update(screen, inputs, textSpeed, playerData)
+            result = self.texts[self.dialogIndex].Update(screen, inputs, textSpeed, playerData, world)
         except IndexError:
             raise IndexError("Invalid dialogue jump. Make sure dialogue jumps to a valid index.")
         if result == -2:

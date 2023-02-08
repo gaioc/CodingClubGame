@@ -11,4 +11,6 @@ WWWWFWWWW
 
 
 
+4|6|Can't go in small room
+
 4|7|testMap|2|1

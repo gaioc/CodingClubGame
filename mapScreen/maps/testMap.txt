@@ -25,5 +25,7 @@ WWFWWWWW
 4|6|Teacher|npc.png
 5|10|Suspicious <Location>|moss.png
 
+
+
 2|19|mainHall|9|1
 2|0|smallRoomTest|4|6

@@ -1,3 +1,6 @@
+Can't go in small room
+Auto(): Can't go in small room
+
 Panicked Student 1
 Auto(): Panicked Student 1
 

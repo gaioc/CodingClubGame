@@ -5,7 +5,7 @@ import esper
 from dataclass import dataclass
 from typing import List, Dict, Tuple
 import pathlib
-from mapScreen.mapScreen import Input, PlayerMove
+from mapScreen.mapScreen import Input, PlayerMove, loadMap, NPCHolder, MapHolder, TileArrayComponent, Position
 
 #PYGAME DEPENDENCIES
 pg.font.init()
@@ -124,7 +124,42 @@ class DialogGiveItem(DialogInstance):
         playerData.inventory.append(self.item)
         return self.next
 
+class DialogLoadMap(DialogInstance):
+    """
+    Loads map and places player at the given position.
+    """
+    active : bool = False
+    mapName : str
+    playerX : int
+    playerY : int
+    next : int = -2
 
+    def __init__(self, mapName, playerX, playerY, next):
+        self.mapName = mapName
+        self.playerX = playerX
+        self.playerY = playerY
+        self.next = next
+    def Activate(self):
+        self.active = True
+    def Update(self, screen, inputs, textSpeed, playerData, world):
+        """
+        Load the given map and place the player at playerX, playerY. (tile position)
+        """
+        mapsDict = world.get_component(MapHolder)[0][1]
+        npcDict = world.get_component(NPCHolder)[0][1]
+        tileMapping = world.get_component(TileArrayComponent)[0][1].data
+
+        playerPos = world.get_components(Position, PlayerMove)[0][1][0]
+        
+        loadMap(world, mapsDict, self.mapName, npcDict, tileMapping)
+
+        playerPos.posx = self.playerX*32
+        playerPos.posy = self.playerY*32
+        playerPos.predictedposx = self.playerX*32
+        playerPos.predictedposy = self.playerY*32
+
+        return self.next
+        
 
 class DialogText(DialogInstance):
     """                                                                                    
@@ -398,7 +433,7 @@ class NPCBrain:
         currentDialog = self.fetchCurrent(playerData)
         
 
-        #NOT IMPLEMENTED: TURN OFF PLAYER MOVEMENT SCRIPT
+        
 
         dialogEntity = world.create_entity(currentDialog)
         
@@ -520,6 +555,8 @@ def readDialogFile(dialogFileContents):
                     finalContents.append(DialogGiveItem(functionWithArgs[1],int(parts[2])))
                 elif function == "\BumpQuest":
                     finalContents.append(DialogBumpQuest(functionWithArgs[1],int(parts[2])))
+                elif function == "\LoadMap":
+                    finalContents.append(DialogLoadMap(functionWithArgs[1], int(functionWithArgs[2]), int(functionWithArgs[3]), int(parts[2])))
                 else:
                     finalContents.append(DialogInstance())
             else:

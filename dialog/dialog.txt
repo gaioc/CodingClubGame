@@ -1,3 +1,18 @@
+Can't go in small room
+Looks like I can't go here yet...||1
+The devs haven't finished making this.||2
+I'll turn back for now.||3
+\LoadMap testMap 2 1||-2
+
+Panicked Student 1
+I can't believe Scotty got captured!||-2
+
+Panicked Student 2
+What are we going to do now?||-2
+
+Panicked Student 3
+What was that thing?!||-2
+
 Healing Place Interaction
 Bobby:Hello!||1
 Bobby:Welcome to the healing place!||2

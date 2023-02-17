@@ -48,6 +48,7 @@ The function might have arguments (`args`), in which case you would describe the
 - [Usable] `BumpQuest [quest]`: "bumps" the quest with id `quest`'s completion status up by one.
 - [Usable] `GiveItem [item]`: gives player an item with name `item`.
 - [Usable] `TakeItem [item]`: takes away an item with name `item` from player.
+- [Usable] `LoadMap [mapName] [X] [Y]`: Loads the map, then places player at X, Y.
 
 ### Examples
 

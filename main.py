@@ -53,7 +53,7 @@ with open("mapScreen/tiles.txt") as tileRaw:
     tileMapping = mapScreen.readTileData(tileRaw.read(), world.component_for_entity(consts, mapScreen.Consts))
 world.create_entity(mapScreen.TileArrayComponent(tileMapping))
 #Configure Options
-world.create_entity(dialog.Options(world.component_for_entity(consts,mapScreen.Consts).screen, int(input("Enter text speed: (1-10)"))/4))
+world.create_entity(dialog.Options(world.component_for_entity(consts,mapScreen.Consts).screen, 1))
 
 #Read Dialog File
 with open("dialog/dialog.txt") as dialogData:
@@ -64,12 +64,12 @@ with open("dialog/npcs.txt") as npcData:
     npcDict = dialog.readNPCFile(npcData.read(), dialogDict)
 world.create_entity(mapScreen.NPCHolder(npcDict))
 
-with open("mapScreen/maps/testMap.txt") as mapRaw:
+with open("mapScreen/maps/openingArea.txt") as mapRaw:
     # You can try changing testMap.txt to see the effect on the result!
-    mapDict = mapScreen.MapHolder({"testMap":mapScreen.readMapData(mapRaw.read(), tileMapping, npcDict)})
+    mapDict = mapScreen.MapHolder({"openingArea":mapScreen.readMapData(mapRaw.read(), tileMapping, npcDict)})
     world.create_entity(mapDict)
 
-testMap = world.create_entity(mapDict["testMap"])
+testMap = world.create_entity(mapDict["openingArea"])
 world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
 
 

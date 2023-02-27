@@ -1,3 +1,7 @@
+Opening Scene
+FirstInteraction(): Opening Scene
+Auto(): Empty
+
 Can't go in small room
 Auto(): Can't go in small room
 

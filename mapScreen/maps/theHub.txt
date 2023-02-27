@@ -35,7 +35,8 @@ ggggggggggggggggggggggggFFgggggggggggggggggggggg
 
 28|28|Teacher|npc.png
 
-
+24|30|Opening Scene
+25|30|Opening Scene
 
 33|25|hubHealingPlace|4|6
 24|0|assemblyArea|12|14

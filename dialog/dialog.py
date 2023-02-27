@@ -42,8 +42,7 @@ class DialogInstance:
     active : bool = False
     def __init__(self):
         pass
-    def Update(self, screen, inputs, textSpeed, playerData):
-        print("NOTIMPLEMENTED: UNDEFINED FUNCTION")
+    def Update(self, screen, inputs, textSpeed, playerData, world):
         return -2
 
 class DialogHealPlayer(DialogInstance):
@@ -123,6 +122,41 @@ class DialogGiveItem(DialogInstance):
         """
         playerData.inventory.append(self.item)
         return self.next
+class DialogMovePlayer(DialogInstance):
+    active : bool = False
+    posx : int
+    posy : int
+    speed : int
+    next : int = -2
+    def __init__(self, posx, posy, speed, next):
+        self.posx = posx
+        self.posy = posy
+        self.speed = speed
+        self.next = next
+    def Activate(self):
+        self.active = True
+    def Update(self, screen, inputs, textSpeed, playerData, world):
+        """
+        Move player to location with speed.
+        """
+        player = world.get_components(PlayerMove, Position)[0][1][1]
+
+        if player.posx != self.posx:
+            player.posx -= (player.posx-self.posx)/abs(player.posx-self.posx) * self.speed
+        if player.posy != self.posy:
+            player.posy -= (player.posy-self.posy)/abs(player.posy-self.posy) * self.speed
+
+        if player.posx == self.posx and player.posy == self.posy:
+            print("Done")
+            player.predictedposx = int(player.posx)
+            player.predictedposy = int(player.posy)
+            player.posx = int(player.posx)
+            player.posy = int(player.posy)
+            return self.next
+        else:
+            return -1
+        
+
 
 class DialogLoadMap(DialogInstance):
     """
@@ -557,6 +591,10 @@ def readDialogFile(dialogFileContents):
                     finalContents.append(DialogBumpQuest(functionWithArgs[1],int(parts[2])))
                 elif function == "\LoadMap":
                     finalContents.append(DialogLoadMap(functionWithArgs[1], int(functionWithArgs[2]), int(functionWithArgs[3]), int(parts[2])))
+                elif function == "\MovePlayer":
+                    finalContents.append(DialogMovePlayer(int(functionWithArgs[1])*32, int(functionWithArgs[2])*32, int(functionWithArgs[3]), int(parts[2])))
+                elif function == "\Empty":
+                    finalContents.append(DialogInstance())
                 else:
                     finalContents.append(DialogInstance())
             else:

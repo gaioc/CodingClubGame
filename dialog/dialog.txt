@@ -1,3 +1,15 @@
+Opening Scene
+???:Hello! You must be here for Scotty's speech!||1
+???:What's that? You don't know what I'm talking about?||2
+???:You really don't want to miss it!||3
+???:Come on! It's just up this way.||4
+\MovePlayer 25 1 4||5
+[Insert cutscene here]||6
+\LoadMap assemblyArea 13 14||-2
+
+Empty
+\Empty||-2
+
 Can't go in small room
 Looks like I can't go here yet...||1
 The devs haven't finished making this.||2

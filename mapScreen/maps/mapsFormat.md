@@ -11,6 +11,9 @@ After another double newline, NPC locations should be listed. These will go
 `X|Y|NpcIdentifier|NPCSpriteFileName`.
 (NPCSpriteFileName should not be an absolute path: for example, use `npc.png` instead of `assets/art/sprites/npc.png`)
 
+After that, the locations of cutscene triggers should be listed. These will go
+`X|Y|Cutscene`.
+
 After that, the locations of loading zones and their destinations should be listed. These will be formatted as so:
 
 `X1|Y1|NextMapName|X2|Y2`, where X1/Y1 are the coords of the loading zone and X2/Y2 are the coords of the destination on the map `NextMapName`.
@@ -46,6 +49,8 @@ WWFWWWWW
 2|2|Bobby|npc.png
 4|6|Teacher|npc.png
 5|10|Suspicious <Location>|moss.png
+
+5|15|Example Cutscene
 
 2|19|mainHall|9|1
 2|0|smallRoomTest|4|6

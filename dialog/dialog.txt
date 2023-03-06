@@ -5,7 +5,19 @@ Opening Scene
 ???:Come on! It's just up this way.||4
 \MovePlayer 25 1 4||5
 [Insert cutscene here]||6
-\LoadMap assemblyArea 13 14||-2
+\LoadMap assemblyArea 13 14||7
+???:Watch out!||8
+[Insert tutorial battle 1 here]||9
+???:Wow, you're pretty strong!||10
+???:There's still one more. How about I teach you how to use that new skill of yours?||11
+[Insert tutorial battle 2 here]||12
+???:What are we going to do now? Scotty's gone, and those things are dangerous.||13
+???:What's that? You want to help?||14
+\LoadMap theHub 12 10||15
+???:I can't let you go alone though. Why don't you check out the lockers and see if anyone wants to help?||16
+???:It's just to your left.||17
+???:You can also pass through the armoury over here to pick up some equipment if you want.||18
+???:Come back to me once you're done.||-2
 
 Empty
 \Empty||-2

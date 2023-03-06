@@ -6,6 +6,7 @@ from dataclass import dataclass
 from typing import List, Dict, Tuple
 import pathlib
 from mapScreen.mapScreen import Input, PlayerMove, loadMap, NPCHolder, MapHolder, TileArrayComponent, Position
+import audio.audio as audio
 
 #PYGAME DEPENDENCIES
 pg.font.init()
@@ -219,6 +220,8 @@ class DialogText(DialogInstance):
         self.chosenOption = 0
         self.btnHeld = True #used to make sure player does not accidentally skip dialogue
     def Update(self, screen: pg.Surface, inputs, textSpeed: int, playerData, world) -> int:
+        audioDict = world.get_component(audio.AudioDict)[0][1]
+
         #Draw dialog box
         pg.draw.rect(screen, (30,30,30), pg.Rect(8, 379, 624, 96))
         #cls()
@@ -231,13 +234,19 @@ class DialogText(DialogInstance):
         for i in range(0, len(toDisplay), wrapping):
             printScr("".join(toDisplay[i:i+wrapping]), 16, 394+20*i//wrapping, (255,255,255), self.font, screen)
             finalPos = i
-            
+
+        if int(self.textInd / textSpeed) % 3 == 0 and self.textInd <= len(self.text):
+            # play text noise
+            print("Text Noise")
+            audioDict.play("textNoise")
+        
         #Check for skipping text scrolling
         if inputs.buttons["cancel"]:
             #print("SKIP")
             self.textInd = len(self.text)
 
         self.textInd += textSpeed
+
         
         
             
@@ -262,9 +271,11 @@ class DialogText(DialogInstance):
                     return self.nextDialog[temp]
                     self.btnHeld = True
                 elif inputs.buttons["up"]:
+                    audioDict.play("menuMove")
                     self.chosenOption = (self.chosenOption - 1) % len(self.playerOptions)
                     self.btnHeld = True
                 elif inputs.buttons["down"]:
+                    audioDict.play("menuMove")
                     self.chosenOption = (self.chosenOption + 1) % len(self.playerOptions)
                     self.btnHeld = True
                 return -1

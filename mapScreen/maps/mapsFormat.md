@@ -4,6 +4,8 @@ Maps should be TXT files.
 
 On the first line, the map size should be given, in the format `X Y`.
 
+After a double newline, the background music for the map should be given. This can be left blank.
+
 After a double newline, the map data should be given, exactly how it appears.
 
 After another double newline, NPC locations should be listed. These will go 
@@ -24,6 +26,8 @@ Example map (simple hallway, placeholder NPC/loading zones):
 
 ```py
 8 20
+
+Indoors.ogg
 
 WWFWWWWW
 WFFFFFFW

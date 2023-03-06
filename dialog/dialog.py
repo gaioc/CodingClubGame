@@ -46,6 +46,23 @@ class DialogInstance:
     def Update(self, screen, inputs, textSpeed, playerData, world):
         return -2
 
+class DialogWait(DialogInstance):
+    active : bool = False
+    next : int = -2
+    def __init__(self, amount, next):
+        self.next = next
+        self.amount = amount # In Frames (30fps)
+        self.counter = 0
+    def Activate(self):
+        self.active = True
+        self.counter = 0
+    def Update(self, screen, inputs, textSpeed, playerData, world):
+        self.counter += 1
+        if self.counter > self.amount:
+            return self.next
+        else:
+            return -1
+
 class DialogHealPlayer(DialogInstance):
     active : bool = False
     next : int = -2
@@ -360,13 +377,14 @@ class Quest:
 class PlayerData:
     """
     Contains all information that conditions could need, 
-    and all non-character specific data that needs to be saved.
-    (progression, interacted NPCs, inventory)
+    and all data that needs to be saved.
+    (progression, interacted NPCs, inventory, and all the characters)
     """
-    def __init__(self, inventory, questList, npcsInteractedWith):
+    def __init__(self, inventory, questList, npcsInteractedWith, characters):
         self.inventory = inventory
         self.questList = questList
         self.npcsInteractedWith = npcsInteractedWith
+        self.characters = characters # First 1 is Lux, next 2 are on party, rest are off
 
 class Condition:
     """
@@ -432,6 +450,11 @@ class InventoryCondition(Condition):
         Returns true if player has relevant item
         """
         return self.itemName in playerData.inventory
+class PlayerClassCondition(Condition):
+    def __init__(self, className):
+        self.className = className
+    def verify(self, name, playerData):
+        return self.className == playerData.characters[0].playerClass
 class FirstInteractionCondition(Condition):
     def __init__(self):
         pass
@@ -512,6 +535,8 @@ def parseCondition(conditionStr):
         return QuestStatusCondition(argList[0], int(argList[1]))
     elif funcName == "HasItem":
         return InventoryCondition(args)
+    elif funcName == "PlayerClass":
+        return PlayerClassCondition(argList[0])
     elif funcName == "Auto":
         return Condition()
     elif funcName == "Not":
@@ -604,6 +629,8 @@ def readDialogFile(dialogFileContents):
                     finalContents.append(DialogLoadMap(functionWithArgs[1], int(functionWithArgs[2]), int(functionWithArgs[3]), int(parts[2])))
                 elif function == "\MovePlayer":
                     finalContents.append(DialogMovePlayer(int(functionWithArgs[1])*32, int(functionWithArgs[2])*32, int(functionWithArgs[3]), int(parts[2])))
+                elif function == "\Wait":
+                    finalContents.append(DialogWait(functionWithArgs[1],int(parts[2])))
                 elif function == "\Empty":
                     finalContents.append(DialogInstance())
                 else:

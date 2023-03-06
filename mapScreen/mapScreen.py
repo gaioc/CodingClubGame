@@ -8,6 +8,7 @@ import esper
 from typing import Tuple, List, Dict
 import random
 import dialog.dialog as dialog
+import audio.audio as audio
 clock = pg.time.Clock()
 
 def clamp(n, nmin, nmax):
@@ -82,8 +83,9 @@ class TileMap:
     mapData : List[List[str]] = []
     tileMapping : TileArray
     active : bool = False
-    def __init__(self, size, data, mapping, npcs, cutscenes, loadingZones):
+    def __init__(self, size, backgroundMusic, data, mapping, npcs, cutscenes, loadingZones):
         self.mapSize = size
+        self.backgroundMusic = backgroundMusic
         self.mapData = data
         self.tileMapping = mapping
         self.active = False
@@ -124,23 +126,40 @@ def loadMap(world, mapsDict, mapName, npcDict, tileMapping):
     Loads map given by mapName. 
     Only fully loads map if map didn't already exist,
     to save processing power, otherwise only NPCs are reloaded.
+    Only stops music if music is different.
     """
 
+    
     # Deactivate all maps
     for name, data in mapsDict.items():
+        if data.active:
+            oldMap = data
         data.Deactivate(world)
+        
 
     # Activate selected map
     if mapName in mapsDict.keys():
         # case 1: map has already been loaded, activate it
-        mapsDict[mapName].Activate(world)
+        currMap = mapsDict[mapName]
     else:
         # case 2: map is new, read and load it
         with open(f"mapScreen/maps/{mapName}.txt") as mapFile:
             mapData = readMapData(mapFile.read(), tileMapping, npcDict)
         mapsDict[mapName] = mapData
-        world.create_entity(mapsDict[mapName])
-        mapData.Activate(world)
+        currMap = mapsDict[mapName]
+        world.create_entity(currMap)
+    currMap.Activate(world)
+
+    print(f"Old background music:[{oldMap.backgroundMusic}]\nNew background music:[{currMap.backgroundMusic}]")
+    
+    # Background music
+    if oldMap.backgroundMusic != currMap.backgroundMusic:
+        audio.stopMusic()
+        audio.playMusic(currMap.backgroundMusic)
+    
+        
+
+    
         
 class NPCIndicator:
     """Component that marks an NPC for the purpose of interaction and physicality."""
@@ -313,7 +332,7 @@ def readMapData(dataStr, tileMapping, npcDict):
     """Read in a file containing map data, as will be specified in mapsFormat.md.
     Requires tile mapping data, as a TileArray.
     Returns a TileMap."""
-    size, mapData, npcData, cutsceneData, loadingZoneData = dataStr.split("\n\n")
+    size, backgroundMusic, mapData, npcData, cutsceneData, loadingZoneData = dataStr.split("\n\n")
 
     sizeTuple = tuple(map(int, size.split(" ")))
     mapDataArray = []
@@ -344,7 +363,7 @@ def readMapData(dataStr, tileMapping, npcDict):
         endX, endY = loadingZone.split("|")[3:]
         finalZones.append((Position(int(startX)*32, int(startY)*32), destination, Position(int(endX)*32, int(endY)*32)))
     
-    return TileMap(sizeTuple, mapDataArray, tileMapping, npcs, cutscenes, finalZones)
+    return TileMap(sizeTuple, backgroundMusic, mapDataArray, tileMapping, npcs, cutscenes, finalZones)
     
     
 

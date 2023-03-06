@@ -4,8 +4,13 @@ import dialog.dialog as dialog
 import stats.equipment as equip
 import stats.stats as stats
 import stats.playerStats as pStats
+import audio.audio as audio
 import mapScreen.mapScreen as mapScreen
 import random
+
+
+pg.mixer.pre_init(44100, -16, 2, 512) #IMPORTANT: reduces stuttering
+pg.mixer.init()
 
 
 #EVERYTHING BEYOND THIS POINT IS TEMPORARY AND FOR TESTING :))))
@@ -43,6 +48,7 @@ consts = world.create_entity(mapScreen.Consts(
     (640,480)      #SCREEN SIZE
 ))
 
+audioDict = world.create_entity(audio.AudioDict("audio/audioFiles.txt"))
 
 
 #CURRENTLY DUMMY VALUES

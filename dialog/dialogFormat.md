@@ -49,6 +49,8 @@ The function might have arguments (`args`), in which case you would describe the
 - [Usable] `GiveItem [item]`: gives player an item with name `item`.
 - [Usable] `TakeItem [item]`: takes away an item with name `item` from player.
 - [Usable] `LoadMap [mapName] [X] [Y]`: Loads the map, then places player at X, Y.
+- [Usable] `MovePlayer [X] [Y] [speed]`: Moves player to `X`, `Y` at speed `speed`. Ignores collision.
+- [Usable] `Wait [frames]`: Wait for `frames` frames.
 
 ### Examples
 

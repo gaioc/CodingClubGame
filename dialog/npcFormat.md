@@ -18,6 +18,9 @@ ___
 #### `FirstInteraction()`
 Returns True if this is the first time meeting the NPC.
 ___
+#### `PlayerClass(class)`
+Returns True if Lux's chosen class matches `class`.
+___
 #### `QuestStatus(status)`
 This one returns True if `status` matches the current status of the quest. (-1 means not taken, everything else represents different completion stages in increasing order.)
 ___

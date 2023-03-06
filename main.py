@@ -23,10 +23,10 @@ with open("stats/classStats.txt") as classData:
     classDict = stats.readClassStats(classData.read())
 
 
-bob = pStats.Character("Bob", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["english"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}))
+lux = pStats.Character("Lux", "English", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["english"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}))
 #print(equipDict)
-bob.equip(equipDict["Simple Calculator"])
-bob.equip(equipDict["Protector's Shield"])
+lux.equip(equipDict["Simple Calculator"])
+lux.equip(equipDict["Protector's Shield"])
 
 #print(bob)
 
@@ -81,11 +81,11 @@ world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
 
 
 
-playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), []))
+playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux]))
 
 
 player = world.create_entity(mapScreen.Position(32,32), 
-                             mapScreen.SpriteRenderer(pg.image.load("assets/art/sprites/player.png")),
+                             mapScreen.SpriteRenderer(pg.image.load("assets/art/maps/sprites/player.png")),
                             mapScreen.PlayerMove(8))
 
 

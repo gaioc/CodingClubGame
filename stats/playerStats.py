@@ -73,7 +73,7 @@ class PlayerBaseStats:
 
 
 class Character:
-    def __init__(self, name, equipment, baseStats):
+    def __init__(self, name, playerClass, equipment, baseStats):
         self.name = name
         self.equipment = equipment
         self.baseStats = baseStats

@@ -380,11 +380,12 @@ class PlayerData:
     and all data that needs to be saved.
     (progression, interacted NPCs, inventory, and all the characters)
     """
-    def __init__(self, inventory, questList, npcsInteractedWith, characters):
+    def __init__(self, inventory, questList, npcsInteractedWith, characters, sharedStats):
         self.inventory = inventory
         self.questList = questList
         self.npcsInteractedWith = npcsInteractedWith
         self.characters = characters # First 1 is Lux, next 2 are on party, rest are off
+        self.sharedStats = sharedStats
 
 class Condition:
     """

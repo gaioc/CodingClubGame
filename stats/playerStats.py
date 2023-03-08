@@ -73,13 +73,15 @@ class PlayerBaseStats:
 
 
 class Character:
-    def __init__(self, name, playerClass, equipment, baseStats):
+    def __init__(self, name, playerClass, equipment, baseStats, spellNames):
         self.name = name
         self.equipment = equipment
         self.baseStats = baseStats
+        self.spellNames = spellNames
 
         self.totalStats = dict()
         self.calculate()
+        self.hp = self.totalStats["maxHP"]
     def __repr__(self):
         out = ""
         out += self.name + "\n"

@@ -5,6 +5,7 @@ import stats.equipment as equip
 import stats.stats as stats
 import stats.playerStats as pStats
 import audio.audio as audio
+import battle.battle as battle
 import mapScreen.mapScreen as mapScreen
 import random
 
@@ -23,12 +24,23 @@ with open("stats/classStats.txt") as classData:
     classDict = stats.readClassStats(classData.read())
 
 
-lux = pStats.Character("Lux", "English", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["english"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}))
-#print(equipDict)
-lux.equip(equipDict["Simple Calculator"])
-lux.equip(equipDict["Protector's Shield"])
+lux = pStats.Character("Lux", "English", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["english"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit"])
+lux.equip(equipDict["Notebook"].enchant(enchantDict["Augmented"]))
+lux.equip(equipDict["Formal Wear"].enchant(enchantDict["Augmented"]))
+lux.equip(equipDict["Six-foot Pencil"].enchant(enchantDict["Sharp"]))
+lux.hp = lux.totalStats["maxHP"]
 
-#print(bob)
+bob = pStats.Character("Bob", "Science", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["science"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit"])
+bob.equip(equipDict["Test Tube"].enchant(enchantDict["Augmented"]))
+bob.equip(equipDict["Lab Coat"].enchant(enchantDict["Warded"]))
+bob.equip(equipDict["Prism"].enchant(enchantDict["Arcane"]))
+bob.hp = bob.totalStats["maxHP"]
+
+test = pStats.Character("Test", "Math", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["math"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit"])
+test.equip(equipDict["Simple Calculator"].enchant(enchantDict["Warded"]))
+test.equip(equipDict["Protector's Armour"].enchant(enchantDict["Heavy"]))
+test.equip(equipDict["Circle Shield"].enchant(enchantDict["Heavy"]))
+test.hp = test.totalStats["maxHP"]
 
 world = esper.World()
 
@@ -39,7 +51,10 @@ inputs = world.create_entity(mapScreen.Input({
     "left":[pg.K_LEFT, pg.K_a],
     "right":[pg.K_RIGHT, pg.K_d],
     "confirm":[pg.K_z, pg.K_RETURN],
-    "cancel":[pg.K_x, pg.K_LSHIFT, pg.K_RSHIFT]
+    "cancel":[pg.K_x, pg.K_LSHIFT, pg.K_RSHIFT],
+    "z":[pg.K_z],
+    "x":[pg.K_x],
+    "c":[pg.K_c]
 }))
 
 
@@ -76,12 +91,17 @@ with open("mapScreen/maps/openingArea.txt") as mapRaw:
     world.create_entity(mapDict)
 
 testMap = world.create_entity(mapDict["openingArea"])
-world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
+#world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
 
 
 
 
-playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux]))
+playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux, bob, test], battle.SharedStats(40, 50, 0)))
+
+print([battle.BattleEntity(None, None, None, None).fromCharacter(i) for i in world.component_for_entity(playerData, dialog.PlayerData).characters])
+
+testBattle = world.create_entity(battle.BattleHandler([battle.BattleEntity(None, None, None, None).fromCharacter(i) for i in world.component_for_entity(playerData, dialog.PlayerData).characters], [battle.BattleEnemy("Skeleton A", {"maxHP":500,"physAtk":220,"physDef":220,"magiAtk":220,"magiDef":220}, 500, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png"),battle.EnemyAI())], world.component_for_entity(playerData, dialog.PlayerData).sharedStats, pg.image.load("assets/art/battle/backgrounds/background1.png")))
+world.component_for_entity(testBattle, battle.BattleHandler).Activate()
 
 
 player = world.create_entity(mapScreen.Position(32,32), 
@@ -89,9 +109,10 @@ player = world.create_entity(mapScreen.Position(32,32),
                             mapScreen.PlayerMove(8))
 
 
-world.add_processor(mapScreen.InputProcessor(), priority=10)
-world.add_processor(mapScreen.PlayerProcessor(), priority=5)
-world.add_processor(mapScreen.GraphicsProcessor(), priority=1)
+world.add_processor(mapScreen.InputProcessor(), priority=15)
+world.add_processor(mapScreen.PlayerProcessor(), priority=10)
+world.add_processor(mapScreen.GraphicsProcessor(), priority=5)
+world.add_processor(battle.BattleProcessor(), priority=1)
 world.add_processor(dialog.DialogProcessor(), priority=0)
 
 

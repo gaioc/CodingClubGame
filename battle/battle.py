@@ -35,7 +35,7 @@ class BattleEntity:
         name = character.name
         stats = character.totalStats
         hp = character.hp
-        spells = [spellList[i] for i in character.spellNames]
+        spells = [spellList[i] for i in character.spellNames[:4]]
         self.__init__(name, stats, hp, spells)
         return self
     def updateCharacter(self, character):
@@ -120,7 +120,10 @@ class DamageEffect(SpellEffect):
             if player:
                 ind = enemies.index(target)
                 world.create_entity(TemporaryText(str(damage), (255*random.randint(7,10)/10,0,0), 30, 320 - (len(enemies)-1)*0.5*160+random.randint(-32, 32) + ind*160 - 64+random.randint(-32, 32), 200))
-            #print(f"{damage} damage to {target.name}!")
+            else:
+                ind = enemies.index(target)
+                world.create_entity(TemporaryText(str(damage), (255*random.randint(7,10)/10,0,0), 30, 48+ind*200+64, 80))
+                #print(f"{damage} damage to {target.name}!")
             target.hp -= damage
             if target.hp < 0:
                 target.hp = 0
@@ -137,9 +140,21 @@ class HealEffect(SpellEffect):
                 if player:
                     ind = players.index(target)
                     world.create_entity(TemporaryText(str(healing), (0,255,0), 30, 48+ind*200+64, 80))
+                else:
+                    ind = players.index(target)
+                    world.create_entity(TemporaryText(str(healing), (0,255,0), 30, 320 - (len(enemies)-1)*0.5*160+random.randint(-32, 32) + ind*160 - 64+random.randint(-32, 32), 200))
                 target.hp += healing
                 if target.hp > target.stats["maxHP"]:
                     target.hp = target.stats["maxHP"]
+class ReviveEffect(SpellEffect):
+    """Revive a party member on 20% hp."""
+    def __init__(self):
+        pass
+    def activateEffect(self, user, player, targets, players, enemies, actionCommandResult, world):
+        for i, target in enumerate(targets):
+            if target.hp < 1:
+                target.hp = min(1, target.stats["maxHP"]//5)
+    
 class StatusSpellEffect(SpellEffect):
     """Grants target a status effect with a chance."""
     def __init__(self, effect, chance):
@@ -220,7 +235,7 @@ class BattleHandler:
                     self.actionDict[f"Spell{i}|{ind}"] = PerformAction(current.spells[i], ind, possibleTargets, current)
             elif current.spells[i].targeting == "self":
                 possibleTargets = [current]
-                self.actionDict[f"SpellTarget{i}"] = MenuOptionsAction([current], [f"Spell{i}|0" for ind in range(len(possibleTargets))], f"SpellDescription{i}")
+                self.actionDict[f"SpellTarget{i}"] = MenuOptionsAction(["Self"], [f"Spell{i}|0" for ind in range(len(possibleTargets))], f"SpellDescription{i}")
                 self.actionDict[f"Spell{i}|0"] = PerformAction(current.spells[i], 0, possibleTargets, current)
             elif current.spells[i].targeting == "allallies":
                 possibleTargets = self.players
@@ -328,7 +343,7 @@ class BattleHandler:
                     else:
                         printtoscreen(screen, 140+margin, 320+margin, f"{self.enemies[self.subturn].name} attacks!", self.font, (255,255,255))
                 elif self.timing >= 30:
-                    result = self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].EnemyAction(True, self.enemies, self.players, self.currentEnemyAction.targetInd, self.currentEnemyAction.potentialTargets, self.enemies[self.subturn], inputs, screen, world, self.buttonDrawer)
+                    result = self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].EnemyAction(False, self.enemies, self.players, self.currentEnemyAction.targetInd, self.currentEnemyAction.potentialTargets, self.enemies[self.subturn], inputs, screen, world, self.buttonDrawer)
                     if result != -1:
                         self.subturn += 1
                         self.timing = -1
@@ -505,8 +520,38 @@ enemyAttacks = {
     "boneSpray":Spell("Bone Spray", ["Shoots bones"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(1, "magiAtk", "magiDef")])
 }
 actionCommandList = {
+    "None":act.ActionCommand(),
+    "Hidden Button Press":act.pressButtonCommand(["z", "x", "c"], 60, 3, False, True),
+    "Lenient 5 Directions":act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 60, True),
+    "Hidden Button + Arrow Sequence":act.MultipleActionCommands([act.pressButtonCommand(["z", "x", "c"], 52, 3, False, True),act.buttonSequenceCommand(["z", "x", "c"], 5, 60, False)],20),
+    "Difficult 12 Buttons/Directions":act.buttonSequenceCommand(["up", "down", "left", "right", "z", "x", "c"], 12, 105, True),
+    "Hold Z":act.holdButtonCommand("z", 60, 3), 
+    "Hold C Fast":act.holdButtonCommand("c", 48, 7),
+    "Hold C Slow":act.holdButtonCommand("c", 120, 7),
+    "Mash Z":act.buttonSequenceCommand(["z"], 16, 48, True),
     "Triple Hit":act.MultipleActionCommands([act.pressButtonCommand(["z", "x", "c"], 30, 3, True, True),act.pressButtonCommand(["z", "x", "c"], 20, 4, True, True),act.pressButtonCommand(["z", "x", "c"], 12, 5, True, True)], 20)
 }
 spellList = {
+    "Art Skill L1":Spell("Art Skill L1", ["Art Skill L1", "Magic attack, hits 1 enemy", "Hold the shown button!"], "1enemy", actionCommandList["Hold Z"],[DamageEffect(2.5, "magiAtk", "magiDef")]),
+    "Art Skill L4":Spell("Art Skill L4", ["Art Skill L4", "Conjure a Creature to fight for you", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
+    "Art Skill L7":Spell("Art Skill L7", ["Art Skill L7", "Creature explodes, damaging all enemies", "Mash Z!"], "allenemies", actionCommandList["Mash Z"],[DamageEffect(7.5, "magiAtk", "magiDef")]), # UNFINISHED
+    "Art Skill L10":Spell("Art Skill L10", ["Art Skill L10", "Heal the Creature. [Note: creature has no maximum health]", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
+    "Revive":Spell("Revive", ["Revive", "Revive a fallen party member and heal them", "No Action Command"], "1ally", actionCommandList["None"],[ReviveEffect(),HealEffect(0.2, "magiAtk")]), # UNFINISHED
+    "Art Skill L16":Spell("Art Skill L16", ["Art Skill L16", "Shift the Creature to an ally.", "No Action Command"], "1ally", actionCommandList["None"],[]), # UNFINISHED
+    "Art Skill L19":Spell("Art Skill L19", ["Art Skill L19", "Creature attacks 5 times.", "No Action Command"], "1enemy", actionCommandList["None"],[]), # UNFINISHED
+    "Science Skill L1":Spell("Science Skill L1", ["Science Skill L1", "Magic attack, hits 1 enemy", "Press the shown button!"], "1enemy", actionCommandList["Hidden Button Press"],[DamageEffect(2.5, "magiAtk", "magiDef")]),
+    "Science Skill L4":Spell("Science Skill L4", ["Science Skill L4", "Magic attack, hits all enemies", "Press the shown directions in order!"], "allenemies", actionCommandList["Lenient 5 Directions"],[DamageEffect(1.5, "magiAtk", "magiDef")]),
+    "Science Skill L7":Spell("Science Skill L7", ["Science Skill L7", "Poison one enemy", "No Action Command"], "1enemy", actionCommandList["None"],[]), # UNFINISHED
+    "Science Skill L10":Spell("Science Skill L10", ["Science Skill L10", "Put one enemy to sleep", "No Action Command"], "1enemy", actionCommandList["None"],[]), # UNFINISHED
+    "Science Skill L13":Spell("Science Skill L13", ["Science Skill L13", "Powerful magic attack, hits 1 enemy", "Press the shown button, then the shown sequence!"], "1enemy", actionCommandList["Hidden Button + Arrow Sequence"],[DamageEffect(10, "magiAtk", "magiDef")]),
+    "Science Skill L16":Spell("Science Skill L16", ["Science Skill L16", "Powerful magic attack, hits all enemies", "Press the shown buttons in sequence!"], "allenemies", actionCommandList["Difficult 12 Buttons/Directions"],[DamageEffect(5, "magiAtk", "magiDef")]),
+    "Science Skill L19":Spell("Science Skill L7", ["Science Skill L19", "Reflect guarded magic attacks this turn, taking no damage.", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
+    "Math Skill L1":Spell("Math Skill L1", ["Math Skill L1", "Draws in enemy attacks", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
+    "Math Skill L4":Spell("Math Skill L4", ["Math Skill L4", "Pulls damage away from allies,", "taking damage in the process for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[]), # UNFINISHED
+    "Math Skill L7":Spell("Math Skill L7", ["Math Skill L7", "Shields party from CRITs", "for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[]), # UNFINISHED
+    "Math Skill L10":Spell("Math Skill L10", ["Math Skill L10", "Creates a ward over the party", "that absorbs damage until destroyed", "Hold C, then release!"], "allallies", actionCommandList["Hold C Fast"],[]), # UNFINISHED
+    "Math Skill L13":Spell("Math Skill L13", ["Math Skill L13", "Increases Defensive Stats", "for 5 turns", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
+    "Math Skill L16":Spell("Math Skill L16", ["Math Skill L16", "Braces self for a physical attack,", "dealing damage back when guarded", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
+    "Math Skill L19":Spell("Math Skill L19", ["Math Skill L19", "Deals heavy damage with user's physical defense", "Hold C, then release!"], "1enemy", actionCommandList["Hold C Slow"],[DamageEffect(5, "physDef", "physDef")]),
     "Triple Hit":Spell("Triple Hit", ["Triple Hit", "Hits three times", "Press the shown buttons in time!"], "1enemy", actionCommandList["Triple Hit"], [DamageEffect(1, "physAtk", "physDef") for i in range(3)])  
 }

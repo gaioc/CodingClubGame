@@ -24,19 +24,19 @@ with open("stats/classStats.txt") as classData:
     classDict = stats.readClassStats(classData.read())
 
 
-lux = pStats.Character("Lux", "English", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["english"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit"])
+lux = pStats.Character("Lux", "English", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["english"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Math Skill L13", "Math Skill L16", "Revive", "Math Skill L10"])
 lux.equip(equipDict["Notebook"].enchant(enchantDict["Augmented"]))
 lux.equip(equipDict["Formal Wear"].enchant(enchantDict["Augmented"]))
 lux.equip(equipDict["Six-foot Pencil"].enchant(enchantDict["Sharp"]))
 lux.hp = lux.totalStats["maxHP"]
 
-bob = pStats.Character("Bob", "Science", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["science"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit"])
+bob = pStats.Character("Bob", "Science", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["science"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Math Skill L1", "Science Skill L4", "Science Skill L1", "Revive"])
 bob.equip(equipDict["Test Tube"].enchant(enchantDict["Augmented"]))
 bob.equip(equipDict["Lab Coat"].enchant(enchantDict["Warded"]))
 bob.equip(equipDict["Prism"].enchant(enchantDict["Arcane"]))
 bob.hp = bob.totalStats["maxHP"]
 
-test = pStats.Character("Test", "Math", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["math"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit"])
+test = pStats.Character("Test", "Art", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["art"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Math Skill L4", "Math Skill L7", "Math Skill L19", "Revive"])
 test.equip(equipDict["Simple Calculator"].enchant(enchantDict["Warded"]))
 test.equip(equipDict["Protector's Armour"].enchant(enchantDict["Heavy"]))
 test.equip(equipDict["Circle Shield"].enchant(enchantDict["Heavy"]))
@@ -98,9 +98,8 @@ testMap = world.create_entity(mapDict["openingArea"])
 
 playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux, bob, test], battle.SharedStats(40, 50, 0)))
 
-print([battle.BattleEntity(None, None, None, None).fromCharacter(i) for i in world.component_for_entity(playerData, dialog.PlayerData).characters])
 
-testBattle = world.create_entity(battle.BattleHandler([battle.BattleEntity(None, None, None, None).fromCharacter(i) for i in world.component_for_entity(playerData, dialog.PlayerData).characters], [battle.BattleEnemy("Skeleton A", {"maxHP":500,"physAtk":220,"physDef":220,"magiAtk":220,"magiDef":220}, 500, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png"),battle.EnemyAI())], world.component_for_entity(playerData, dialog.PlayerData).sharedStats, pg.image.load("assets/art/battle/backgrounds/background1.png")))
+testBattle = world.create_entity(battle.BattleHandler([battle.BattleEntity(None, None, None, None).fromCharacter(i) for i in world.component_for_entity(playerData, dialog.PlayerData).characters], [battle.BattleEnemy("Skeleton A", {"maxHP":100000,"physAtk":300,"physDef":30,"magiAtk":30,"magiDef":30}, 100000, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png"),battle.EnemyAI())], world.component_for_entity(playerData, dialog.PlayerData).sharedStats, pg.image.load("assets/art/battle/backgrounds/background1.png")))
 world.component_for_entity(testBattle, battle.BattleHandler).Activate()
 
 

@@ -60,6 +60,8 @@ class ActionCommand:
     def Update(self, inputs, screen, buttonDrawer):
         """Return code depends on result. Negative numbers mean still in progress, 0 is fail, and 1 is success."""
         return 1
+    def Activate(self):
+        pass
 
 class MultipleActionCommands(ActionCommand):
     """Multiple action commands in sequence."""

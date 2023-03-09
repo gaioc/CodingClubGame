@@ -24,13 +24,13 @@ with open("stats/classStats.txt") as classData:
     classDict = stats.readClassStats(classData.read())
 
 
-lux = pStats.Character("Lux", "English", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["english"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit", "History Skill L19", "History Skill L16", "History Skill L13"])
+lux = pStats.Character("Lux", "English", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["english"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit", "Languages Skill L19", "Languages Skill L16", "Languages Skill L13"])
 lux.equip(equipDict["Notebook"].enchant(enchantDict["Augmented"]))
 lux.equip(equipDict["Formal Wear"].enchant(enchantDict["Augmented"]))
 lux.equip(equipDict["Six-foot Pencil"].enchant(enchantDict["Sharp"]))
 lux.hp = lux.totalStats["maxHP"]
 
-bob = pStats.Character("Bob", "Science", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["science"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit", "History Skill L4", "History Skill L7", "Revive"])
+bob = pStats.Character("Bob", "Science", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["science"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit", "Languages Skill L4", "Languages Skill L10", "Revive"])
 bob.equip(equipDict["Test Tube"].enchant(enchantDict["Augmented"]))
 bob.equip(equipDict["Lab Coat"].enchant(enchantDict["Warded"]))
 bob.equip(equipDict["Prism"].enchant(enchantDict["Arcane"]))

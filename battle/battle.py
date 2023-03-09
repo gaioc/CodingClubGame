@@ -565,7 +565,9 @@ enemyAttacks = {
 }
 actionCommandList = {
     "None":act.ActionCommand(),
+    "Press Z Fast":act.pressButtonCommand(["z"], 48, 7, True, True),
     "Hidden Button Press":act.pressButtonCommand(["z", "x", "c"], 60, 3, False, True),
+    "Hidden X/C Fast":act.pressButtonCommand(["x", "c"], 48, 7, False, True),
     "Hidden Direction Press":act.pressButtonCommand(["up", "down", "left", "right"], 60, 3, False, True),
     "Lenient 5 Directions":act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 60, True),
     "Hidden 5 Directions":act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 90, False),
@@ -586,7 +588,20 @@ actionCommandList = {
     "Mash Up":act.buttonSequenceCommand(["up"], 16, 48, True),
     "Mash Down":act.buttonSequenceCommand(["down"], 16, 48, True),
     "Mash Up/Down/X":act.MultipleActionCommands([act.buttonSequenceCommand(["up"], 16, 48, True),act.buttonSequenceCommand(["down"], 16, 48, True),act.buttonSequenceCommand(["x"], 16, 48, True)],48),
-    "Triple Hit":act.MultipleActionCommands([act.pressButtonCommand(["z", "x", "c"], 30, 3, True, True),act.pressButtonCommand(["z", "x", "c"], 20, 4, True, True),act.pressButtonCommand(["z", "x", "c"], 12, 5, True, True)], 20)
+    "Triple Hit":act.MultipleActionCommands([act.pressButtonCommand(["z", "x", "c"], 30, 3, True, True),act.pressButtonCommand(["z", "x", "c"], 20, 4, True, True),act.pressButtonCommand(["z", "x", "c"], 12, 5, True, True)], 20),
+    "Konami Code":act.MultipleActionCommands([
+        act.pressButtonCommand(["up"],20,1,True,True),
+        act.pressButtonCommand(["up"],20,1,True,True),
+        act.pressButtonCommand(["down"],20,1,True,True),
+        act.pressButtonCommand(["down"],20,1,True,True),
+        act.pressButtonCommand(["left"],20,1,True,True),
+        act.pressButtonCommand(["right"],20,1,True,True),
+        act.pressButtonCommand(["left"],20,1,True,True),
+        act.pressButtonCommand(["right"],20,1,True,True),
+        act.pressButtonCommand(["x"],20,1,True,True),
+        act.pressButtonCommand(["c"],20,1,True,True),
+        act.pressButtonCommand(["z"],20,1,True,True),
+    ],10)
 }
 spellList = {
     # ART SPELLS
@@ -635,7 +650,10 @@ spellList = {
     "History Skill L19":Spell("History Skill L19", ["History Skill L19", "Revive all fallen party member and heals them greatly", "Mash UP, then DOWN, then X!"], "allallies", actionCommandList["Mash Up/Down/X"],[ReviveEffect(),HealEffect(2, "magiAtk")]), 
 
     "Languages Skill L1":Spell("Languages Skill L1", ["Languages Skill L1", "Lowers an enemy's defense and magic defense", "Can Stack", "Press the right direction when it appears!"], "1enemy", actionCommandList["Hidden Direction Press"],[]), # UNFINISHED
-    "Languages Skill L4":Spell("Languages Skill L4", ["Languages Skill L4", "Copies the last skill used", "by an ally.", "Previous Action Command"], "1enemy", actionCommandList["None"],[]), # UNFINISHED
-    "Triple Hit":Spell("Triple Hit", ["Triple Hit", "Hits three times", "Press the shown buttons in time!"], "1enemy", actionCommandList["Triple Hit"], [DamageEffect(1, "physAtk", "physDef") for i in range(3)])  
-    
+    "Languages Skill L4":Spell("Languages Skill L4", ["Languages Skill L4", "Copies the last skill used", "by an ally.", "Previous Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
+    "Triple Hit":Spell("Triple Hit", ["Triple Hit", "Hits three times", "Press the shown buttons in time!"], "1enemy", actionCommandList["Triple Hit"], [DamageEffect(1, "physAtk", "physDef") for i in range(3)]),
+    "Languages Skill L10":Spell("Languages Skill L10", ["Languages Skill L10", "Deals heavy damage over 3 turns", "Press X or C!"], "1enemy", actionCommandList["Hidden X/C Fast"],[]), # UNFINISHED
+    "Languages Skill L13":Spell("Languages Skill L13", ["Languages Skill L13", "Attacks, with a chance to find an item", "Press Z!"], "1enemy", actionCommandList["Press Z Fast"],[]), # UNFINISHED
+    "Languages Skill L16":Spell("Languages Skill L16", ["Languages Skill L16", "Activates damage over time effects", "on one enemy 3 times", "Press the buttons as they appear!"], "1enemy", actionCommandList["Triple Hit"],[]), # UNFINISHED
+    "Languages Skill L19":Spell("Languages Skill L19", ["Languages Skill L19", "Removes status effects,", "dealing damage relative to amount", "Up-Up-Down-Down-","-Left-Right-Left-Right-","-X-C-Z!"], "1enemy", actionCommandList["Konami Code"],[]), # UNFINISHED
 }

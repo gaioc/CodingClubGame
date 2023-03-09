@@ -22,7 +22,7 @@ def damageCalc(attack, defense, baseDamage):
     """
     Calculates damage given attack, defense, and base damage.
     """
-    return max(1, int((attack**2 * baseDamage) / (attack + defense)))
+    return max(1, int((attack**2 * baseDamage*random.randint(85,115)/100) / (attack + defense)))
 
 
 class BattleEntity:
@@ -116,13 +116,18 @@ class DamageEffect(SpellEffect):
         attacking = user.stats[self.offensive] * actionCommandResult
         for i, target in enumerate(targets):
             defending = target.stats[self.defensive]
-            damage = damageCalc(attacking, defending, self.amount)
+            crit = random.randint(0, 99) < 12
+            damage = int(damageCalc(attacking, defending, self.amount) * (2 if crit else 1))
             if player:
                 ind = enemies.index(target)
                 world.create_entity(TemporaryText(str(damage), (255*random.randint(7,10)/10,0,0), 30, 320 - (len(enemies)-1)*0.5*160+random.randint(-32, 32) + ind*160 - 64+random.randint(-32, 32), 200))
+                if crit:
+                    world.create_entity(TemporaryText("CRIT", (100,0,150), 30, 320 - (len(enemies)-1)*0.5*160+random.randint(-32, 32) + ind*160 - 64+random.randint(-32, 32), 160))
             else:
                 ind = enemies.index(target)
                 world.create_entity(TemporaryText(str(damage), (255*random.randint(7,10)/10,0,0), 30, 48+ind*200+64, 80))
+                if crit:
+                    world.create_entity(TemporaryText("CRIT", (100,0,150), 30, 48+ind*200+64, 160))
                 #print(f"{damage} damage to {target.name}!")
             target.hp -= damage
             if target.hp < 0:
@@ -154,7 +159,46 @@ class ReviveEffect(SpellEffect):
         for i, target in enumerate(targets):
             if target.hp < 1:
                 target.hp = min(1, target.stats["maxHP"]//5)
-    
+class MultiVampireEffect(SpellEffect):
+    """Deal damage, then heal all allies based on damage and scale factor."""
+    def __init__(self, amount, factor, offensive, defensive):
+        self.amount = amount
+        self.factor = factor
+        self.offensive = offensive
+        self.defensive = defensive
+    def activateEffect(self, user, player, targets, players, enemies, actionCommandResult, world):
+        attacking = user.stats[self.offensive] * actionCommandResult
+        for i, target in enumerate(targets):
+            defending = target.stats[self.defensive]
+            crit = random.randint(0, 99) < 12
+            damage = int(damageCalc(attacking, defending, self.amount) * (2 if crit else 1))
+            if player:
+                ind = enemies.index(target)
+                world.create_entity(TemporaryText(str(damage), (255*random.randint(7,10)/10,0,0), 30, 320 - (len(enemies)-1)*0.5*160+random.randint(-32, 32) + ind*160 - 64+random.randint(-32, 32), 200))
+                if crit:
+                    world.create_entity(TemporaryText("CRIT", (100,0,150), 30, 320 - (len(enemies)-1)*0.5*160+random.randint(-32, 32) + ind*160 - 64+random.randint(-32, 32), 160))
+            else:
+                ind = enemies.index(target)
+                world.create_entity(TemporaryText(str(damage), (255*random.randint(7,10)/10,0,0), 30, 48+ind*200+64, 80))
+                if crit:
+                    world.create_entity(TemporaryText("CRIT", (100,0,150), 30, 48+ind*200+64, 160))
+                #print(f"{damage} damage to {target.name}!")
+            target.hp -= damage
+            if target.hp < 0:
+                target.hp = 0
+        for i, target in enumerate(players):
+            if target.hp > 0:
+                healing = int(self.factor * damage)
+                if player:
+                    ind = players.index(target)
+                    world.create_entity(TemporaryText(str(healing), (0,255,0), 30, 48+ind*200+64, 80))
+                else:
+                    ind = players.index(target)
+                    world.create_entity(TemporaryText(str(healing), (0,255,0), 30, 320 - (len(enemies)-1)*0.5*160+random.randint(-32, 32) + ind*160 - 64+random.randint(-32, 32), 200))
+                target.hp += healing
+                if target.hp > target.stats["maxHP"]:
+                    target.hp = target.stats["maxHP"]
+
 class StatusSpellEffect(SpellEffect):
     """Grants target a status effect with a chance."""
     def __init__(self, effect, chance):
@@ -522,23 +566,39 @@ enemyAttacks = {
 actionCommandList = {
     "None":act.ActionCommand(),
     "Hidden Button Press":act.pressButtonCommand(["z", "x", "c"], 60, 3, False, True),
+    "Hidden Direction Press":act.pressButtonCommand(["up", "down", "left", "right"], 60, 3, False, True),
     "Lenient 5 Directions":act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 60, True),
+    "Hidden 5 Directions":act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 90, False),
+    "Hidden 3 Fast Directions":act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 45, False),
+    "4 Directions in a Row":act.MultipleActionCommands([act.pressButtonCommand(["up", "down", "left", "right"], 32, 3, True, True),act.pressButtonCommand(["up", "down", "left", "right"], 32, 3, True, True),act.pressButtonCommand(["up", "down", "left", "right"], 32, 3, True, True),act.pressButtonCommand(["up", "down", "left", "right"], 32, 3, True, True)],8),
     "Hidden Button + Arrow Sequence":act.MultipleActionCommands([act.pressButtonCommand(["z", "x", "c"], 52, 3, False, True),act.buttonSequenceCommand(["z", "x", "c"], 5, 60, False)],20),
     "Difficult 12 Buttons/Directions":act.buttonSequenceCommand(["up", "down", "left", "right", "z", "x", "c"], 12, 105, True),
+    "Hidden 5, Hidden 3, Mash Z":act.MultipleActionCommands([act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 90, False),act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 45, False),act.buttonSequenceCommand(["z"], 16, 48, True)],30),
+    "X or Down":act.buttonSequenceCommand(["x","down"],8,105,False),
+    "Hold X, then Up/Down":act.MultipleActionCommands([act.holdButtonCommand("x", 60, 3), act.buttonSequenceCommand(["up", "down"],8,60,True)],30),
     "Hold Z":act.holdButtonCommand("z", 60, 3), 
+    "Hold X":act.holdButtonCommand("x", 60, 3),
+    "Hold X Slow":act.holdButtonCommand("x", 120, 7),
     "Hold C Fast":act.holdButtonCommand("c", 48, 7),
     "Hold C Slow":act.holdButtonCommand("c", 120, 7),
     "Mash Z":act.buttonSequenceCommand(["z"], 16, 48, True),
+    "Mash X":act.buttonSequenceCommand(["x"], 16, 48, True),
+    "Mash Up":act.buttonSequenceCommand(["up"], 16, 48, True),
+    "Mash Down":act.buttonSequenceCommand(["down"], 16, 48, True),
+    "Mash Up/Down/X":act.MultipleActionCommands([act.buttonSequenceCommand(["up"], 16, 48, True),act.buttonSequenceCommand(["down"], 16, 48, True),act.buttonSequenceCommand(["x"], 16, 48, True)],48),
     "Triple Hit":act.MultipleActionCommands([act.pressButtonCommand(["z", "x", "c"], 30, 3, True, True),act.pressButtonCommand(["z", "x", "c"], 20, 4, True, True),act.pressButtonCommand(["z", "x", "c"], 12, 5, True, True)], 20)
 }
 spellList = {
-    "Art Skill L1":Spell("Art Skill L1", ["Art Skill L1", "Magic attack, hits 1 enemy", "Hold the shown button!"], "1enemy", actionCommandList["Hold Z"],[DamageEffect(2.5, "magiAtk", "magiDef")]),
+    # ART SPELLS
+    "Art Skill L1":Spell("Art Skill L1", ["Art Skill L1", "Magic attack, hits 1 enemy", "Hold Z!"], "1enemy", actionCommandList["Hold Z"],[DamageEffect(2.5, "magiAtk", "magiDef")]),
     "Art Skill L4":Spell("Art Skill L4", ["Art Skill L4", "Conjure a Creature to fight for you", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Art Skill L7":Spell("Art Skill L7", ["Art Skill L7", "Creature explodes, damaging all enemies", "Mash Z!"], "allenemies", actionCommandList["Mash Z"],[DamageEffect(7.5, "magiAtk", "magiDef")]), # UNFINISHED
     "Art Skill L10":Spell("Art Skill L10", ["Art Skill L10", "Heal the Creature. [Note: creature has no maximum health]", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
-    "Revive":Spell("Revive", ["Revive", "Revive a fallen party member and heal them", "No Action Command"], "1ally", actionCommandList["None"],[ReviveEffect(),HealEffect(0.2, "magiAtk")]), # UNFINISHED
+    "Revive":Spell("Revive", ["Revive", "Revive a fallen party member and heal them", "No Action Command"], "1ally", actionCommandList["None"],[ReviveEffect(),HealEffect(0.2, "magiAtk")]),
     "Art Skill L16":Spell("Art Skill L16", ["Art Skill L16", "Shift the Creature to an ally.", "No Action Command"], "1ally", actionCommandList["None"],[]), # UNFINISHED
     "Art Skill L19":Spell("Art Skill L19", ["Art Skill L19", "Creature attacks 5 times.", "No Action Command"], "1enemy", actionCommandList["None"],[]), # UNFINISHED
+    
+    # SCIENCE SKILLS
     "Science Skill L1":Spell("Science Skill L1", ["Science Skill L1", "Magic attack, hits 1 enemy", "Press the shown button!"], "1enemy", actionCommandList["Hidden Button Press"],[DamageEffect(2.5, "magiAtk", "magiDef")]),
     "Science Skill L4":Spell("Science Skill L4", ["Science Skill L4", "Magic attack, hits all enemies", "Press the shown directions in order!"], "allenemies", actionCommandList["Lenient 5 Directions"],[DamageEffect(1.5, "magiAtk", "magiDef")]),
     "Science Skill L7":Spell("Science Skill L7", ["Science Skill L7", "Poison one enemy", "No Action Command"], "1enemy", actionCommandList["None"],[]), # UNFINISHED
@@ -546,6 +606,8 @@ spellList = {
     "Science Skill L13":Spell("Science Skill L13", ["Science Skill L13", "Powerful magic attack, hits 1 enemy", "Press the shown button, then the shown sequence!"], "1enemy", actionCommandList["Hidden Button + Arrow Sequence"],[DamageEffect(10, "magiAtk", "magiDef")]),
     "Science Skill L16":Spell("Science Skill L16", ["Science Skill L16", "Powerful magic attack, hits all enemies", "Press the shown buttons in sequence!"], "allenemies", actionCommandList["Difficult 12 Buttons/Directions"],[DamageEffect(5, "magiAtk", "magiDef")]),
     "Science Skill L19":Spell("Science Skill L7", ["Science Skill L19", "Reflect guarded magic attacks this turn, taking no damage.", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
+    
+    # MATH SKILLS
     "Math Skill L1":Spell("Math Skill L1", ["Math Skill L1", "Draws in enemy attacks", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L4":Spell("Math Skill L4", ["Math Skill L4", "Pulls damage away from allies,", "taking damage in the process for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L7":Spell("Math Skill L7", ["Math Skill L7", "Shields party from CRITs", "for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[]), # UNFINISHED
@@ -553,5 +615,27 @@ spellList = {
     "Math Skill L13":Spell("Math Skill L13", ["Math Skill L13", "Increases Defensive Stats", "for 5 turns", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L16":Spell("Math Skill L16", ["Math Skill L16", "Braces self for a physical attack,", "dealing damage back when guarded", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L19":Spell("Math Skill L19", ["Math Skill L19", "Deals heavy damage with user's physical defense", "Hold C, then release!"], "1enemy", actionCommandList["Hold C Slow"],[DamageEffect(5, "physDef", "physDef")]),
+    
+    # PSYCHOLOGY SKILLS
+    "Psychology Skill L1":Spell("Psychology Skill L1", ["Psychology Skill L1", "Lowers an enemy's attack and magic attack", "Press the shown directions in order!"], "1enemy", actionCommandList["Lenient 5 Directions"],[]), # UNFINISHED
+    "Psychology Skill L4":Spell("Psychology Skill L4", ["Psychology Skill L4", "Magic attack, hits 1 enemy", "Hold X!"], "1enemy", actionCommandList["Hold X"],[DamageEffect(2.5, "magiAtk", "magiDef")]),
+    "Psychology Skill L7":Spell("Psychology Skill L7", ["Psychology Skill L7", "Raises the party's defenses", "Press the shown directions as they appear!"], "allallies", actionCommandList["Hidden 5 Directions"],[]), # UNFINISHED
+    "Psychology Skill L10":Spell("Psychology Skill L10", ["Psychology Skill L10", "Increases an ally's crit chance", "Press the shown directions in time!"], "1ally", actionCommandList["4 Directions in a Row"],[]), # UNFINISHED
+    "Psychology Skill L13":Spell("Psychology Skill L13", ["Psychology Skill L13", "Increases an ally's physical attack", "Press the shown directions as they appear!"], "1ally", actionCommandList["Hidden 3 Fast Directions"],[]), # UNFINISHED
+    "Psychology Skill L16":Spell("Psychology Skill L16", ["Psychology Skill L16", "Increases an ally's magical attack", "Press the shown directions as they appear!"], "1ally", actionCommandList["Hidden 3 Fast Directions"],[]), # UNFINISHED
+    "Psychology Skill L19":Spell("Psychology Skill L19", ["Psychology Skill L19", "Increases all of the party's stats!", "Press the shown directions as they appear", "twice, then mash Z!"], "allallies", actionCommandList["Hidden 5, Hidden 3, Mash Z"],[]), # UNFINISHED
+    
+    # HISTORY SKILLS
+    "History Skill L1":Spell("History Skill L1", ["History Skill L1", "Heal an ally", "Hold X!"], "1ally", actionCommandList["Hold X"],[HealEffect(0.7, "magiAtk")]),
+    "History Skill L4":Spell("History Skill L4", ["History Skill L4", "Cures all afflictions", "on an ally", "No Action Command"], "1ally", actionCommandList["None"],[]), # UNFINISHED
+    "History Skill L7":Spell("History Skill L7", ["History Skill L7", "Gives passive regeneration", "to an ally", "Press X or DOWN as it appears!"], "1ally", actionCommandList["X or Down"],[]), # UNFINISHED
+    # Revive
+    "History Skill L13":Spell("History Skill L13", ["History Skill L13", "Heal party", "Hold X, then press UP and DOWN!"], "allallies", actionCommandList["Hold X, then Up/Down"],[HealEffect(0.5, "magiAtk")]),
+    "History Skill L16":Spell("History Skill L16", ["History Skill L16", "Drain an enemy's life", "to heal the party", "Hold X!"], "1enemy", actionCommandList["Hold X Slow"],[MultiVampireEffect(4, 0.25, "magiAtk", "magiDef")]),
+    "History Skill L19":Spell("History Skill L19", ["History Skill L19", "Revive all fallen party member and heals them greatly", "Mash UP, then DOWN, then X!"], "allallies", actionCommandList["Mash Up/Down/X"],[ReviveEffect(),HealEffect(2, "magiAtk")]), 
+
+    "Languages Skill L1":Spell("Languages Skill L1", ["Languages Skill L1", "Lowers an enemy's defense and magic defense", "Can Stack", "Press the right direction when it appears!"], "1enemy", actionCommandList["Hidden Direction Press"],[]), # UNFINISHED
+    "Languages Skill L4":Spell("Languages Skill L4", ["Languages Skill L4", "Copies the last skill used", "by an ally.", "Previous Action Command"], "1enemy", actionCommandList["None"],[]), # UNFINISHED
     "Triple Hit":Spell("Triple Hit", ["Triple Hit", "Hits three times", "Press the shown buttons in time!"], "1enemy", actionCommandList["Triple Hit"], [DamageEffect(1, "physAtk", "physDef") for i in range(3)])  
+    
 }

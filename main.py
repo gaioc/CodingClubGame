@@ -24,19 +24,19 @@ with open("stats/classStats.txt") as classData:
     classDict = stats.readClassStats(classData.read())
 
 
-lux = pStats.Character("Lux", "English", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["english"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Math Skill L13", "Math Skill L16", "Revive", "Math Skill L10"])
+lux = pStats.Character("Lux", "English", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["english"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit", "History Skill L19", "History Skill L16", "History Skill L13"])
 lux.equip(equipDict["Notebook"].enchant(enchantDict["Augmented"]))
 lux.equip(equipDict["Formal Wear"].enchant(enchantDict["Augmented"]))
 lux.equip(equipDict["Six-foot Pencil"].enchant(enchantDict["Sharp"]))
 lux.hp = lux.totalStats["maxHP"]
 
-bob = pStats.Character("Bob", "Science", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["science"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Math Skill L1", "Science Skill L4", "Science Skill L1", "Revive"])
+bob = pStats.Character("Bob", "Science", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["science"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit", "History Skill L4", "History Skill L7", "Revive"])
 bob.equip(equipDict["Test Tube"].enchant(enchantDict["Augmented"]))
 bob.equip(equipDict["Lab Coat"].enchant(enchantDict["Warded"]))
 bob.equip(equipDict["Prism"].enchant(enchantDict["Arcane"]))
 bob.hp = bob.totalStats["maxHP"]
 
-test = pStats.Character("Test", "Art", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["art"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Math Skill L4", "Math Skill L7", "Math Skill L19", "Revive"])
+test = pStats.Character("Test", "Art", pStats.PlayerEquip(), pStats.PlayerBaseStats(4, classDict["art"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Triple Hit", "History Skill L1", "Math Skill L19", "Revive"])
 test.equip(equipDict["Simple Calculator"].enchant(enchantDict["Warded"]))
 test.equip(equipDict["Protector's Armour"].enchant(enchantDict["Heavy"]))
 test.equip(equipDict["Circle Shield"].enchant(enchantDict["Heavy"]))
@@ -99,12 +99,12 @@ testMap = world.create_entity(mapDict["openingArea"])
 playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux, bob, test], battle.SharedStats(40, 50, 0)))
 
 
-testBattle = world.create_entity(battle.BattleHandler([battle.BattleEntity(None, None, None, None).fromCharacter(i) for i in world.component_for_entity(playerData, dialog.PlayerData).characters], [battle.BattleEnemy("Skeleton A", {"maxHP":100000,"physAtk":300,"physDef":30,"magiAtk":30,"magiDef":30}, 100000, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png"),battle.EnemyAI())], world.component_for_entity(playerData, dialog.PlayerData).sharedStats, pg.image.load("assets/art/battle/backgrounds/background1.png")))
+testBattle = world.create_entity(battle.BattleHandler([battle.BattleEntity(None, None, None, None).fromCharacter(i) for i in world.component_for_entity(playerData, dialog.PlayerData).characters], [battle.BattleEnemy("Skeleton A", {"maxHP":100000,"physAtk":300,"physDef":30,"magiAtk":30,"magiDef":30}, 100000, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),battle.EnemyAI())], world.component_for_entity(playerData, dialog.PlayerData).sharedStats, pg.image.load("assets/art/battle/backgrounds/background1.png").convert()))
 world.component_for_entity(testBattle, battle.BattleHandler).Activate()
 
 
 player = world.create_entity(mapScreen.Position(32,32), 
-                             mapScreen.SpriteRenderer(pg.image.load("assets/art/maps/sprites/player.png")),
+                             mapScreen.SpriteRenderer(pg.image.load("assets/art/maps/sprites/player.png").convert_alpha()),
                             mapScreen.PlayerMove(8))
 
 
@@ -115,9 +115,12 @@ world.add_processor(battle.BattleProcessor(), priority=1)
 world.add_processor(dialog.DialogProcessor(), priority=0)
 
 
-
+i = 0
 while 1:
     world.process()
     pg.display.flip()
     clock.tick(30) #technically configurable: can run fine at 60, suffers from frame drops if you go higher
-    #print(clock.get_fps()) #see console for performance
+    if i > int(clock.get_fps()):
+        print(clock.get_fps()) #see console for performance
+        i = 0
+    i += 1

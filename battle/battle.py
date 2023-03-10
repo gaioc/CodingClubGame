@@ -6,6 +6,7 @@ import stats.playerStats as pStats
 import battle.actionCommands as act
 import mapScreen.mapScreen as mapScreen
 import math
+import copy
 
 pg.font.init()
 
@@ -54,6 +55,7 @@ class BattleEntity:
         name = character.name
         stats = character.totalStats
         hp = character.hp
+        self.character = character
         spells = [spellList[i] for i in character.spellNames[:4]]
         self.__init__(name, stats, hp, spells)
         self.updateStats()
@@ -71,6 +73,7 @@ class BattleEnemy(BattleEntity):
         self.spells = spells
         self.sprite = sprite
         self.enemyAI = enemyAI
+        self.id = 0
 
 class EnemyAI:
     def __init__(self):
@@ -350,12 +353,89 @@ class TemporaryText:
         if self.timer > self.time:
             world.delete_entity(id)
 
+class VictoryHandler:
+    def __init__(self, allCharacters, sharedStats, xp, gold):
+        xpPerLevelUp = [
+                   1,
+                   5,
+                  10,
+                  30,
+                 100,
+                 150,
+                 300,
+                 900,
+                1200,
+                6000,
+                9000,
+               18000,
+               54000,
+              180000,
+              270000,
+              540000,
+             1620000,
+             5400000,
+            24300000,
+            48600000,
+            10**100
+        ]
+        spellsPerClass = {
+            "art":["Art Skill L1", "Art Skill L4", "Art Skill L7", "Art Skill L10", "Revive", "Art Skill L16", "Art Skill L19"],
+            "science":["Science Skill L1", "Science Skill L4", "Science Skill L7", "Science Skill L10", "Science Skill L13", "Science Skill L16", "Science Skill L19"],
+            "math":["Math Skill L1", "Math Skill L4", "Math Skill L7", "Math Skill L10", "Math Skill L13", "Math Skill L16", "Math Skill L19"],
+            "psychology":["Psychology Skill L1", "Psychology Skill L4", "Psychology Skill L7", "Psychology Skill L10", "Psychology Skill L13", "Psychology Skill L16", "Psychology Skill L19"],
+            "history":["History Skill L1", "History Skill L4", "History Skill L7", "Revive", "History Skill L13", "History Skill L16", "History Skill L19"],
+            "english":["English Skill L1", "English Skill L4", "English Skill L7", "Triple Hit", "Revive", "English Skill L16", "English Skill L19"],
+            "languages":["Languages Skill L1", "Languages Skill L4", "Languages Skill L7", "Languages Skill L10", "Languages Skill L13", "Languages Skill L16", "Languages Skill L19"],
+        }
+        
+        self.allCharacters = allCharacters
+        self.currPlayers = allCharacters[:3]
+        self.xp = xp
+        self.gold = gold
+        self.counter = 0
+        
+        
+        
+        
+        
+        self.menuList = []
+        self.menuList.append(DescriptionConfirmAction(["Victory!", f"Gained {xp} experience points", f"and {gold} gold."], 1, -1))
+
+        sharedStats.xp += xp
+        while sharedStats.xp > xpPerLevelUp[self.allCharacters[0].character.baseStats.level]:
+            sharedStats.xp -= xpPerLevelUp[self.allCharacters[0].character.baseStats.level]
+            for battleCharacter in self.allCharacters:
+                character = battleCharacter.character
+                oldBase = copy.deepcopy(character.baseStats.finalStats)
+                character.baseStats.setLevel(character.baseStats.level + 1)
+                self.menuList.append(DescriptionConfirmAction([f"{character.name} grew to level {character.baseStats.level}!"] + [f"{statName.upper():8}: {oldBase[statName]:6} + {(character.baseStats.finalStats[statName] - oldBase[statName]):3} = {character.baseStats.finalStats[statName]:5}" for statName in ["maxHP", "physAtk", "physDef", "magiAtk", "magiDef"]],1, -1))
+                if character.baseStats.level in [1, 4, 7, 10, 13, 16, 19]:
+                    character.spellNames.append(spellsPerClass[character.playerClass.lower()][int((character.baseStats.level - 1)//3)])
+                    self.menuList.append(DescriptionConfirmAction([f"{character.name} learned {spellsPerClass[character.playerClass.lower()][int((character.baseStats.level - 1)//3)]}!", ("Equip it in the Menu" if len(character.spellNames) > 4 else "Automatically Equipped")],1, -1))
+        
+    def Update(self, screen, world, inputs):
+        if self.counter >= len(self.menuList):
+            return 1
+        else:
+            result = self.menuList[self.counter].Update(screen, inputs, world)
+            if result == 1:
+                self.counter += 1
+            return -1
+
+        
+
 class BattleHandler:
-    def __init__(self, players, enemies, sharedPlayerStats, background):
-        self.players = players
+    def __init__(self, players, enemies, sharedPlayerStats, background, xp, gold):
+        self.allCharacters = players
+        self.players = players[:3]
         self.enemies = enemies
+        self.initialEnemies = enemies
         self.sharedPlayerStats = sharedPlayerStats
         self.active = False
+        self.victoryHandler = None
+        self.progress = "fighting"
+        self.xp = xp
+        self.gold = gold
         self.background = background
         self.font = pg.font.SysFont("Courier", 24)
         self.smallfont = pg.font.SysFont("Courier", 16)
@@ -368,24 +448,31 @@ class BattleHandler:
         self.actionDict = {}
         self.currentIndex = "Start"
         self.active = True
+        self.initialEnemyCount = len(self.enemies)
+        for i, enemy in enumerate(self.enemies):
+            enemy.id = i
         self.populateActions()
     def populateActions(self):
         current = self.players[self.subturn]
 
-        self.actionDict["Start"] = MenuOptionsAction(["Fight", "Spell", "Run"], ["Fight", "Spell", "Run"], "Start")
+        if len(current.spells) > 0:
+            self.actionDict["Start"] = MenuOptionsAction(["Fight", "Spell", "Run"], ["Fight", "Spell", "Run"], "Start")
+        else:
+            self.actionDict["Start"] = MenuOptionsAction(["Fight", "Run"], ["Fight", "Run"], "Start")
         
         self.actionDict["Fight"] = DescriptionConfirmAction(["Fight", "Normal attack.", "Press Z when the circle lights up!"], "FightTarget", "Start")
-        self.actionDict["FightTarget"] = MenuOptionsAction([enemy.name for enemy in self.enemies], [f"FightAction{i}" for i in range(len(self.enemies))], "Fight")
+        self.actionDict["FightTarget"] = MenuOptionsAction([enemy.name for enemy in self.enemies if enemy.hp > 0], [f"FightAction{i}" for i in range(len(self.enemies))], "Fight")
         for i in range(len(self.enemies)):
             self.actionDict[f"FightAction{i}"] = PerformAction(Spell("Fight", ["Fight", "Normal attack.", "Press Z when the last circle lights up!"], "1enemy", act.pressButtonCommand(["z"], 48, 3, True, False), [DamageEffect(1, "physAtk", "physDef")]), i, self.enemies, current)
 
-        self.actionDict["Spell"] = MenuOptionsAction([spell.name for spell in current.spells], [f"SpellDescription{i}" for i in range(len(current.spells))], "Start")
+        if len(current.spells) > 0:
+            self.actionDict["Spell"] = MenuOptionsAction([spell.name for spell in current.spells], [f"SpellDescription{i}" for i in range(len(current.spells))], "Start")
 
         for i in range(len(current.spells)):
             self.actionDict[f"SpellDescription{i}"] = DescriptionConfirmAction(current.spells[i].description, f"SpellTarget{i}", "Spell")
             if current.spells[i].targeting == "1enemy":
                 possibleTargets = self.enemies
-                self.actionDict[f"SpellTarget{i}"] = MenuOptionsAction([enemy.name for enemy in self.enemies], [f"Spell{i}|{ind}" for ind in range(len(possibleTargets))], f"SpellDescription{i}")
+                self.actionDict[f"SpellTarget{i}"] = MenuOptionsAction([enemy.name for enemy in self.enemies if enemy.hp > 0], [f"Spell{i}|{ind}" for ind in range(len(possibleTargets))], f"SpellDescription{i}")
                 for ind in range(len(possibleTargets)):
                     self.actionDict[f"Spell{i}|{ind}"] = PerformAction(current.spells[i], ind, possibleTargets, current)
             elif current.spells[i].targeting == "1ally":
@@ -402,7 +489,7 @@ class BattleHandler:
                 self.actionDict[f"SpellTarget{i}"] = MenuOptionsAction(["All Characters"], [f"Spell{i}|0" for ind in range(len(possibleTargets))], f"SpellDescription{i}")  
                 self.actionDict[f"Spell{i}|0"] = PerformAction(current.spells[i], 0, possibleTargets, current)
             elif current.spells[i].targeting == "allenemies":
-                possibleTargets = self.enemies
+                possibleTargets = [enemy for enemy in self.enemies if enemy.hp > 0]
                 self.actionDict[f"SpellTarget{i}"] = MenuOptionsAction(["All Enemies"], [f"Spell{i}|0" for ind in range(len(possibleTargets))], f"SpellDescription{i}")
                 self.actionDict[f"Spell{i}|0"] = PerformAction(current.spells[i], 0, possibleTargets, current)
             
@@ -417,9 +504,10 @@ class BattleHandler:
         screen.blit(self.background, bgrect)
 
         for i, enemy in enumerate(self.enemies):
-            enemyrect = enemy.sprite.get_rect()
-            enemyrect.center = 320 - (len(self.enemies)-1)*0.5*160 + i*160, 200
-            screen.blit(enemy.sprite, enemyrect)
+            if enemy.hp > 0:
+                enemyrect = enemy.sprite.get_rect()
+                enemyrect.center = 320 - (self.initialEnemyCount-1)*0.5*160 + enemy.id*160, 200
+                screen.blit(enemy.sprite, enemyrect)
         
     def drawUI(self, screen):
         for i, player in enumerate(self.players):
@@ -449,13 +537,28 @@ class BattleHandler:
                 printtoscreen(screen,72+i*200+(j%3)*64,84+(j//3)*64,str(statusEffect.turns),self.smallfont,(255,255,255))
         for i, enemy in enumerate(self.enemies):
             for j, statusEffect in enumerate(enemy.statusEffects):
-                self.statusEffectDrawer.draw(screen, statusEffect.icon, 256-(len(self.enemies)-1)*0.5*160+i*160+(j%3)*64, 292+(j//3)*64)
-                printtoscreen(screen,256-(len(self.enemies)-1)*0.5*160+i*160+(j%3)*64, 292+(j//3)*64,str(statusEffect.turns),self.smallfont,(255,255,255))
+                self.statusEffectDrawer.draw(screen, statusEffect.icon, 256-(self.initialEnemyCount-1)*0.5*160+enemy.id*160+(j%3)*64, 292+(j//3)*64)
+                printtoscreen(screen,256-(self.initialEnemyCount-1)*0.5*160+enemy.id*160+(j%3)*64, 292+(j//3)*64,str(statusEffect.turns),self.smallfont,(255,255,255))
         
     
     def Update(self, screen, inputs, world):
-
         self.draw(screen)
+        # Check if battle has finished
+        if self.progress == "fighting":
+            if len(self.enemies) < 1:
+                self.progress = "victory"
+                self.victoryHandler = VictoryHandler(self.allCharacters, self.sharedPlayerStats, self.xp, self.gold)
+            elif not(any([p for p in self.players if p.hp > 0])):
+                self.progress = "defeat"
+        
+        # If battle has finished, run either the game over or the victory handler with the given statistics.
+        if self.progress == "victory":
+            result = self.victoryHandler.Update(screen, inputs, world)
+            if result == 1:
+                return -3
+            else:
+                return -1
+        
         # UPDATE UI
         self.drawUI(screen)
 
@@ -471,12 +574,12 @@ class BattleHandler:
             else:
                 # run current BattleAction
                 result = self.actionDict[self.currentIndex].Update(screen, world, inputs)
-
+                self.enemies = [enemy for enemy in self.enemies if enemy.hp > 0]
             
             
             
             if result == -3:
-                #Battle's done, everyone can go home now
+                # Run away
                 return -3
             elif result == -2:
                 # Activate end-of-my-turn status effects
@@ -529,9 +632,12 @@ class BattleHandler:
                                 effect.activate(False, self.subturn, len(self.enemies), self.enemies[self.subturn], world)
                             effect.turns -= 1
                         self.enemies[self.subturn].statusEffects = [i for i in self.enemies[self.subturn].statusEffects if i.turns > 0]
-        
-                        # Next!
-                        self.subturn += 1
+                        oldenemies = self.enemies
+                        self.enemies = [enemy for enemy in self.enemies if enemy.hp > 0]
+                        # Next
+                        # IF the current entity is still alive, bump index, otherwise keep it the same
+                        if oldenemies[self.subturn] in self.enemies:
+                            self.subturn += 1
                         self.timing = -1
             self.timing += 1
             if self.subturn >= len(self.enemies):

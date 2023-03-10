@@ -78,6 +78,7 @@ class Character:
         self.equipment = equipment
         self.baseStats = baseStats
         self.spellNames = spellNames
+        self.playerClass = playerClass
 
         self.totalStats = dict()
         self.calculate()

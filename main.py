@@ -24,19 +24,19 @@ with open("stats/classStats.txt") as classData:
     classDict = stats.readClassStats(classData.read())
 
 
-lux = pStats.Character("Lux", "English", pStats.PlayerEquip(), pStats.PlayerBaseStats(1, classDict["languages"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+lux = pStats.Character("Lux", "English", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["languages"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Psychology Skill L1", "Psychology Skill L10", "Psychology Skill L19"])
 #lux.equip(equipDict["Notebook"].enchant(enchantDict["Augmented"]))
 #lux.equip(equipDict["Formal Wear"].enchant(enchantDict["Augmented"]))
 #lux.equip(equipDict["Six-foot Pencil"].enchant(enchantDict["Sharp"]))
 lux.hp = lux.totalStats["maxHP"]
 
-bob = pStats.Character("Bob", "Science", pStats.PlayerEquip(), pStats.PlayerBaseStats(1, classDict["science"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+bob = pStats.Character("Bob", "Science", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["math"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Psychology Skill L4", "Psychology Skill L13", "Math Skill L13"])
 #bob.equip(equipDict["Test Tube"].enchant(enchantDict["Augmented"]))
 #bob.equip(equipDict["Lab Coat"].enchant(enchantDict["Warded"]))
 #bob.equip(equipDict["Prism"].enchant(enchantDict["Arcane"]))
 bob.hp = bob.totalStats["maxHP"]
 
-test = pStats.Character("Test", "Art", pStats.PlayerEquip(), pStats.PlayerBaseStats(1, classDict["art"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+test = pStats.Character("Test", "Art", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["art"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Psychology Skill L7", "Psychology Skill L16", "Languages Skill L1"])
 #test.equip(equipDict["Simple Calculator"].enchant(enchantDict["Warded"]))
 #test.equip(equipDict["Protector's Armour"].enchant(enchantDict["Heavy"]))
 #test.equip(equipDict["Circle Shield"].enchant(enchantDict["Heavy"]))
@@ -101,9 +101,9 @@ playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-
 
 testBattle = world.create_entity(battle.BattleHandler([battle.BattleEntity(None, None, None, None).fromCharacter(i) for i in world.component_for_entity(playerData, dialog.PlayerData).characters], 
                                                       [
-                                                          battle.BattleEnemy("Skeleton A", {"maxHP":50,"physAtk":15,"physDef":10,"magiAtk":15,"magiDef":10}, 1, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),battle.EnemyAI()),
-                                                          battle.BattleEnemy("Skeleton B", {"maxHP":50,"physAtk":15,"physDef":10,"magiAtk":15,"magiDef":10}, 1, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),battle.EnemyAI()),
-                                                          battle.BattleEnemy("Skeleton C", {"maxHP":50,"physAtk":15,"physDef":10,"magiAtk":15,"magiDef":10}, 1, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),battle.EnemyAI())
+                                                          battle.BattleEnemy("Skeleton A", {"maxHP":50000,"physAtk":100,"physDef":10,"magiAtk":100,"magiDef":10}, 50000, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),battle.EnemyAI()),
+                                                          battle.BattleEnemy("Skeleton B", {"maxHP":50000,"physAtk":100,"physDef":10,"magiAtk":100,"magiDef":10}, 50000, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),battle.EnemyAI()),
+                                                          battle.BattleEnemy("Skeleton C", {"maxHP":50000,"physAtk":100,"physDef":10,"magiAtk":100,"magiDef":10}, 50000, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),battle.EnemyAI())
                                                       ], world.component_for_entity(playerData, dialog.PlayerData).sharedStats, pg.image.load("assets/art/battle/backgrounds/background1.png").convert(), 1000000000, 100))
 world.component_for_entity(testBattle, battle.BattleHandler).Activate()
 

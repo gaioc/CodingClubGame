@@ -24,7 +24,7 @@ def damageCalc(attack, defense, baseDamage):
     """
     Calculates damage given attack, defense, and base damage.
     """
-    return max(1, int((attack**2 * baseDamage*random.randint(85,115)/100) / (attack + defense)))
+    return max(1, int((attack**2 * baseDamage*random.randint(95,105)/100) / (attack + defense)))
 
 
 class StatModifier:
@@ -258,6 +258,50 @@ class HoTEffect(SpellEffect):
                 for i, statusEffect in enumerate(target.statusEffects):
                     if statusEffect.name == self.name:
                         target.statusEffects[i] = HoTStatusEffect(self.name, self.turns, attacking, self.icon)
+
+class StatChangeFixedEffect(SpellEffect):
+    """Inflict a stat buff/debuff of fixed strength on entity for a certain amount of turns."""
+    def __init__(self, stats, amount, name, turns, icon):
+        self.stats = stats
+        self.amount = amount
+        self.name = name
+        self.turns = turns
+        self.icon = icon
+    def activateEffect(self, user, player, targets, players, enemies, actionCommandResult, world):
+        for i, target in enumerate(targets):
+            if self.name not in [x.name for x in target.statusEffects]:
+                target.statusEffects.append(StatChangeStatusEffect(self.name, self.turns, 
+                                                                   [(StatModifier(self.name, self.amount), stat) for stat in self.stats],
+                                                                   self.icon))
+            else:
+                for i, statusEffect in enumerate(target.statusEffects):
+                    if statusEffect.name == self.name:
+                        target.statusEffects[i] = StatChangeStatusEffect(self.name, self.turns, 
+                                                                   [(StatModifier(self.name, self.amount), stat) for stat in self.stats],
+                                                                   self.icon)
+class StatChangeScalingEffect(SpellEffect):
+    """Inflict a stat buff/debuff of scaling strength on entity for a certain amount of turns."""
+    def __init__(self, scaling, stats, amount, name, turns, icon):
+        self.scaling = scaling
+        self.stats = stats
+        self.amount = amount
+        self.name = name
+        self.turns = turns
+        self.icon = icon
+    def activateEffect(self, user, player, targets, players, enemies, actionCommandResult, world):
+        total = math.log(user.stats[self.scaling], 2) * self.amount * actionCommandResult
+        print(total)
+        for i, target in enumerate(targets):
+            if self.name not in [x.name for x in target.statusEffects]:
+                target.statusEffects.append(StatChangeStatusEffect(self.name, self.turns, 
+                                                                   [(StatModifier(self.name, total), stat) for stat in self.stats],
+                                                                   self.icon))
+            else:
+                for i, statusEffect in enumerate(target.statusEffects):
+                    if statusEffect.name == self.name:
+                        target.statusEffects[i] = StatChangeStatusEffect(self.name, self.turns, 
+                                                                   [(StatModifier(self.name, total), stat) for stat in self.stats],
+                                                                   self.icon)
 
 
 
@@ -818,12 +862,12 @@ actionCommandList = {
     "Hidden X/C Fast":act.pressButtonCommand(["x", "c"], 48, 7, False, True),
     "Hidden Direction Press":act.pressButtonCommand(["up", "down", "left", "right"], 60, 3, False, True),
     "Lenient 5 Directions":act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 60, True),
-    "Hidden 5 Directions":act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 90, False),
-    "Hidden 3 Fast Directions":act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 45, False),
+    "Hidden 5 Directions":act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 120, False),
+    "Hidden 3 Fast Directions":act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 52, False),
     "4 Directions in a Row":act.MultipleActionCommands([act.pressButtonCommand(["up", "down", "left", "right"], 32, 3, True, True),act.pressButtonCommand(["up", "down", "left", "right"], 32, 3, True, True),act.pressButtonCommand(["up", "down", "left", "right"], 32, 3, True, True),act.pressButtonCommand(["up", "down", "left", "right"], 32, 3, True, True)],8),
     "Hidden Button + Arrow Sequence":act.MultipleActionCommands([act.pressButtonCommand(["z", "x", "c"], 52, 3, False, True),act.buttonSequenceCommand(["z", "x", "c"], 5, 60, False)],20),
     "Difficult 12 Buttons/Directions":act.buttonSequenceCommand(["up", "down", "left", "right", "z", "x", "c"], 12, 105, True),
-    "Hidden 5, Hidden 3, Mash Z":act.MultipleActionCommands([act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 90, False),act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 45, False),act.buttonSequenceCommand(["z"], 16, 48, True)],30),
+    "Hidden 5, Hidden 3, Mash Z":act.MultipleActionCommands([act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 120, False),act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 52, False),act.buttonSequenceCommand(["z"], 16, 48, True)],30),
     "X or Down":act.buttonSequenceCommand(["x","down"],6,120,False),
     "Hold X, then Up/Down":act.MultipleActionCommands([act.holdButtonCommand("x", 60, 3), act.buttonSequenceCommand(["up", "down"],8,60,True)],30),
     "Hold Z":act.holdButtonCommand("z", 60, 3), 
@@ -875,18 +919,18 @@ spellList = {
     "Math Skill L4":Spell("Math Skill L4", ["Math Skill L4", "Pulls damage away from allies,", "taking damage in the process for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L7":Spell("Math Skill L7", ["Math Skill L7", "Shields party from CRITs", "for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L10":Spell("Math Skill L10", ["Math Skill L10", "Creates a ward over the party", "that absorbs damage until destroyed", "Hold C, then release!"], "allallies", actionCommandList["Hold C Fast"],[]), # UNFINISHED
-    "Math Skill L13":Spell("Math Skill L13", ["Math Skill L13", "Increases Defensive Stats", "for 5 turns", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
+    "Math Skill L13":Spell("Math Skill L13", ["Math Skill L13", "Increases Defensive Stats", "for 5 turns", "No Action Command"], "self", actionCommandList["None"],[StatChangeFixedEffect(["physDef", "magiDef"], 0.8, "Math L13", 4, "buffBothDef")]), # UNFINISHED
     "Math Skill L16":Spell("Math Skill L16", ["Math Skill L16", "Braces self for a physical attack,", "dealing damage back when guarded", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L19":Spell("Math Skill L19", ["Math Skill L19", "Deals heavy damage with user's physical defense", "Hold C, then release!"], "1enemy", actionCommandList["Hold C Slow"],[DamageEffect(5, "physDef", "physDef")]),
     
     # PSYCHOLOGY SKILLS
-    "Psychology Skill L1":Spell("Psychology Skill L1", ["Psychology Skill L1", "Lowers an enemy's attack and magic attack", "Press the shown directions in order!"], "1enemy", actionCommandList["Lenient 5 Directions"],[]), # UNFINISHED
+    "Psychology Skill L1":Spell("Psychology Skill L1", ["Psychology Skill L1", "Lowers an enemy's attack and magic attack", "Press the shown directions in order!"], "1enemy", actionCommandList["Lenient 5 Directions"],[StatChangeScalingEffect("magiAtk", ["physAtk"], -0.1, "Psych L1 PhysAtk", 4, "debuffPhysAtk"), StatChangeScalingEffect("magiAtk", ["magiAtk"], -0.1, "Psych L1 MagiAtk", 4, "debuffMagiAtk")]),
     "Psychology Skill L4":Spell("Psychology Skill L4", ["Psychology Skill L4", "Magic attack, hits 1 enemy", "Hold X!"], "1enemy", actionCommandList["Hold X"],[DamageEffect(2.5, "magiAtk", "magiDef")]),
-    "Psychology Skill L7":Spell("Psychology Skill L7", ["Psychology Skill L7", "Raises the party's defenses", "Press the shown directions as they appear!"], "allallies", actionCommandList["Hidden 5 Directions"],[]), # UNFINISHED
+    "Psychology Skill L7":Spell("Psychology Skill L7", ["Psychology Skill L7", "Raises the party's defenses", "Press the shown directions as they appear!"], "allallies", actionCommandList["Hidden 5 Directions"],[StatChangeScalingEffect("magiAtk", ["physDef"], 0.1, "Psych L7 PhysDef", 4, "buffPhysDef"), StatChangeScalingEffect("magiAtk", ["magiDef"], 0.1, "Psych L7 MagiDef", 4, "buffMagiDef")]),
     "Psychology Skill L10":Spell("Psychology Skill L10", ["Psychology Skill L10", "Increases an ally's crit chance", "Press the shown directions in time!"], "1ally", actionCommandList["4 Directions in a Row"],[]), # UNFINISHED
-    "Psychology Skill L13":Spell("Psychology Skill L13", ["Psychology Skill L13", "Increases an ally's physical attack", "Press the shown directions as they appear!"], "1ally", actionCommandList["Hidden 3 Fast Directions"],[]), # UNFINISHED
-    "Psychology Skill L16":Spell("Psychology Skill L16", ["Psychology Skill L16", "Increases an ally's magical attack", "Press the shown directions as they appear!"], "1ally", actionCommandList["Hidden 3 Fast Directions"],[]), # UNFINISHED
-    "Psychology Skill L19":Spell("Psychology Skill L19", ["Psychology Skill L19", "Increases all of the party's stats!", "Press the shown directions as they appear", "twice, then mash Z!"], "allallies", actionCommandList["Hidden 5, Hidden 3, Mash Z"],[]), # UNFINISHED
+    "Psychology Skill L13":Spell("Psychology Skill L13", ["Psychology Skill L13", "Increases an ally's physical attack", "Press the shown directions as they appear!"], "1ally", actionCommandList["Hidden 3 Fast Directions"],[StatChangeScalingEffect("magiAtk", ["physAtk"], 0.1, "Psych L13 PhysAtk", 4, "buffPhysAtk")]), 
+    "Psychology Skill L16":Spell("Psychology Skill L16", ["Psychology Skill L16", "Increases an ally's magical attack", "Press the shown directions as they appear!"], "1ally", actionCommandList["Hidden 3 Fast Directions"],[StatChangeScalingEffect("magiAtk", ["magiAtk"], 0.1, "Psych L13 MagiAtk", 4, "buffMagiAtk")]), 
+    "Psychology Skill L19":Spell("Psychology Skill L19", ["Psychology Skill L19", "Increases all of the party's stats!", "Press the shown directions as they appear", "twice, then mash Z!"], "allallies", actionCommandList["Hidden 5, Hidden 3, Mash Z"],[StatChangeScalingEffect("magiAtk", ["physAtk"], 0.2, "Psych L19 PhysAtk", 4, "buffPhysAtk"),StatChangeScalingEffect("magiAtk", ["magiAtk"], 0.2, "Psych L19 MagiAtk", 4, "buffMagiAtk"),StatChangeScalingEffect("magiAtk", ["physDef"], 0.2, "Psych L19 PhysDef", 4, "buffPhysDef"),StatChangeScalingEffect("magiAtk", ["magiDef"], 0.2, "Psych L19 MagiDef", 4, "buffMagiDef")]), # UNFINISHED
     
     # HISTORY SKILLS
     "History Skill L1":Spell("History Skill L1", ["History Skill L1", "Heal an ally", "Hold X!"], "1ally", actionCommandList["Hold X"],[HealEffect(0.7, "magiAtk")]),

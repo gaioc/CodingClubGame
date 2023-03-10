@@ -36,7 +36,7 @@ class ActionCommandProcessor(esper.Processor):
 class ButtonDrawer(Dict):
     def __init__(self, filenames):
         for filename in filenames:
-            self[filename] = pg.image.load(f"assets/art/ui/{filename}.png")
+            self[filename] = pg.image.load(f"assets/art/ui/actionCommands/{filename}.png").convert_alpha()
     def drawShort(self, screen, short, posx, posy):
         self.draw(screen, {
             "down":"arrow_down",

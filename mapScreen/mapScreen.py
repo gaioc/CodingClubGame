@@ -96,7 +96,7 @@ class TileMap:
         """Set active to `True` and spawn NPCs and cutscenes. Needs a reference to the world to spawn NPCs."""
         self.active = True
         for npc in self.npcs:
-            world.create_entity(npc[0], npc[1], SpriteRenderer(pg.image.load(f"assets/art/maps/sprites/{npc[2]}")), NPCIndicator())
+            world.create_entity(npc[0], npc[1], SpriteRenderer(pg.image.load(f"assets/art/maps/sprites/{npc[2]}").convert_alpha()), NPCIndicator())
         for cutscene in self.cutscenes:
             world.create_entity(cutscene[0], cutscene[1], CutsceneIndicator())
     def Deactivate(self, world):
@@ -325,7 +325,7 @@ def readTileData(dataStr, consts):
     outTiles = TileArray(dict())
     for tileData in tilesRaw:
         lines = tileData.split("\n")
-        outTiles.tileData[lines[0]] = Tile(pg.image.load(f"assets/art/maps/tiles/{lines[1]}"), (lines[2] == "True"), consts)
+        outTiles.tileData[lines[0]] = Tile(pg.image.load(f"assets/art/maps/tiles/{lines[1]}").convert(), (lines[2] == "True"), consts)
     return outTiles
 
 def readMapData(dataStr, tileMapping, npcDict):

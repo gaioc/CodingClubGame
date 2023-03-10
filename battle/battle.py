@@ -5,6 +5,7 @@ from typing import Dict, List
 import stats.playerStats as pStats
 import battle.actionCommands as act
 import mapScreen.mapScreen as mapScreen
+import math
 
 pg.font.init()
 
@@ -25,25 +26,47 @@ def damageCalc(attack, defense, baseDamage):
     return max(1, int((attack**2 * baseDamage*random.randint(85,115)/100) / (attack + defense)))
 
 
+class StatModifier:
+    def __init__(self, name, amount):
+        self.name = name
+        self.amount = amount
 class BattleEntity:
     def __init__(self, name, stats, hp, spells):
         self.name = name
-        self.stats = stats
+        self.baseStats = stats
+        self.stats = dict()
         self.hp = hp
         self.spells = spells
+        self.statusEffects = []
+        self.statModifiers = {"maxHP":[],"physAtk":[],"physDef":[],"magiAtk":[],"magiDef":[]}
+    def updateStats(self):
+        self.statModifiers = {"maxHP":[],"physAtk":[],"physDef":[],"magiAtk":[],"magiDef":[]}
+        for effect in self.statusEffects:
+            if effect.type == "StatChange":
+                for statModifier, affectedStat in effect.modifiers:
+                    self.statModifiers[affectedStat].append(statModifier)
+        for stat in self.statModifiers.keys():
+            cumulative = 1
+            for mod in self.statModifiers[stat]:
+                cumulative += mod.amount
+            self.stats[stat] = int((self.baseStats[stat] * cumulative))
     def fromCharacter(self, character):
         name = character.name
         stats = character.totalStats
         hp = character.hp
         spells = [spellList[i] for i in character.spellNames[:4]]
         self.__init__(name, stats, hp, spells)
+        self.updateStats()
         return self
     def updateCharacter(self, character):
         character.hp = self.hp
 class BattleEnemy(BattleEntity):
     def __init__(self, name, stats, hp, spells, sprite, enemyAI):
         self.name = name
+        self.baseStats = stats
         self.stats = stats
+        self.statusEffects = []
+        self.statModifiers = {"maxHP":[],"physAtk":[],"physDef":[],"magiAtk":[],"magiDef":[]}
         self.hp = hp
         self.spells = spells
         self.sprite = sprite
@@ -198,14 +221,106 @@ class MultiVampireEffect(SpellEffect):
                 target.hp += healing
                 if target.hp > target.stats["maxHP"]:
                     target.hp = target.stats["maxHP"]
-
-class StatusSpellEffect(SpellEffect):
-    """Grants target a status effect with a chance."""
-    def __init__(self, effect, chance):
-        self.effect = effect
-        self.chance = chance
+class DoTEffect(SpellEffect):
+    """Inflict damage over time effect on entity"""
+    def __init__(self, amount, offensive, name, turns, icon):
+        self.amount = amount
+        self.offensive = offensive
+        self.name = name
+        self.turns = turns
+        self.icon = icon
     def activateEffect(self, user, player, targets, players, enemies, actionCommandResult, world):
+        attacking = int(user.stats[self.offensive] * actionCommandResult * self.amount)
+        for i, target in enumerate(targets):
+            if self.name not in [x.name for x in target.statusEffects]:
+                target.statusEffects.append(DoTStatusEffect(self.name, self.turns, attacking, self.icon))
+            else:
+                for i, statusEffect in enumerate(target.statusEffects):
+                    if statusEffect.name == self.name:
+                        target.statusEffects[i] = DoTStatusEffect(self.name, self.turns, attacking, self.icon)
+class HoTEffect(SpellEffect):
+    """Inflict regen over time effect on entity"""
+    def __init__(self, amount, offensive, name, turns, icon):
+        self.amount = amount
+        self.offensive = offensive
+        self.name = name
+        self.turns = turns
+        self.icon = icon
+    def activateEffect(self, user, player, targets, players, enemies, actionCommandResult, world):
+        attacking = int(user.stats[self.offensive] * actionCommandResult * self.amount)
+        for i, target in enumerate(targets):
+            if self.name not in [x.name for x in target.statusEffects]:
+                target.statusEffects.append(HoTStatusEffect(self.name, self.turns, attacking, self.icon))
+            else:
+                for i, statusEffect in enumerate(target.statusEffects):
+                    if statusEffect.name == self.name:
+                        target.statusEffects[i] = HoTStatusEffect(self.name, self.turns, attacking, self.icon)
+
+
+
+class StatusEffectDrawer(Dict):
+    def __init__(self, filenames):
+        for filename in filenames:
+            self[filename] = pg.image.load(f"assets/art/ui/statusIcons/{filename}.png").convert_alpha()
+    def draw(self, screen, name, posx, posy):
+        rect = self[name].get_rect()
+        rect.center = posx, posy
+        screen.blit(self[name], rect)
+
+
+class StatusEffect:
+    """Base class"""
+    def __init__(self, name, type, turns, endOfTurn, icon):
+        self.name = name
+        self.type = type
+        self.endOfTurn = endOfTurn
+        self.turns = turns
+        self.icon = icon
+    def activate(self, player, posInd, targetAmount, afflicted, world):
         pass
+class DoTStatusEffect:
+    """Deals damage at the end of afflicted's turn."""
+    def __init__(self, name, turns, damage, icon):
+        self.name = name
+        self.type = "DoT"
+        self.endOfTurn = True
+        self.damage = damage
+        self.turns = turns
+        self.icon = icon
+    def activate(self, player, posInd, targetAmount, afflicted, world):
+        afflicted.hp -= self.damage
+        if player:
+            world.create_entity(TemporaryText(str(self.damage), (100,0,100), 30, 48+posInd*200+64, 80))
+        else:
+            world.create_entity(TemporaryText(str(self.damage), (100,0,100), 30, 320 - (targetAmount-1)*0.5*160+random.randint(-32, 32) + posInd*160 - 64+random.randint(-32, 32), 200))
+        if afflicted.hp < 0:
+            afflicted.hp = 0
+class HoTStatusEffect:
+    """Heals damage at the end of afflicted's turn."""
+    def __init__(self, name, turns, healing, icon):
+        self.name = name
+        self.type = "HoT"
+        self.endOfTurn = True
+        self.healing = healing
+        self.turns = turns
+        self.icon = icon
+    def activate(self, player, posInd, targetAmount, afflicted, world):
+        afflicted.hp += self.healing
+        if player:
+            world.create_entity(TemporaryText(str(self.healing), (0,176,100), 30, 48+posInd*200+64, 80))
+        else:
+            world.create_entity(TemporaryText(str(self.healing), (0,176,100), 30, 320 - (targetAmount-1)*0.5*160+random.randint(-32, 32) + posInd*160 - 64+random.randint(-32, 32), 200))
+        if afflicted.hp > afflicted.stats["maxHP"]:
+            afflicted.hp = afflicted.stats["maxHP"]
+class StatChangeStatusEffect:
+    """Changes stats based on modifiers, for as long as it lasts. Stats get recalculated after every action."""
+    def __init__(self, name, turns, modifiers, icon):
+        self.name = name
+        self.type = "StatChange"
+        self.turns = turns
+        self.modifiers = modifiers
+        self.endOfTurn = False
+        self.icon = icon
 
 class SharedStats:
     def __init__(self, tp, tpMax, xp):
@@ -245,6 +360,7 @@ class BattleHandler:
         self.font = pg.font.SysFont("Courier", 24)
         self.smallfont = pg.font.SysFont("Courier", 16)
         self.buttonDrawer = act.ButtonDrawer(["arrow_down", "arrow_left", "arrow_right", "arrow_up", "bright_circle", "button_?", "button_c", "button_x", "button_z", "dark_circle", "red_circle"])
+        self.statusEffectDrawer = StatusEffectDrawer(["absorb", "buffBothDef", "buffCritRate", "buffMagiAtk", "buffMagiDef", "buffPhysAtk", "buffPhysDef", "counterMagic", "counterPhys", "debuffBothDef", "debuffMagiAtk", "debuffMagiDef", "debuffPhysAtk", "debuffPhysDef", "poisonStrong", "poisonWeak", "protectCrit", "regen", "sleep", "taunt"])
     def Activate(self):
         self.turn = "players"
         self.subturn = 0
@@ -325,6 +441,16 @@ class BattleHandler:
         printtoscreen(screen, 10, 240, f"{self.sharedPlayerStats.tp:2}", self.smallfont, (255,255,255))
         printtoscreen(screen, 10, 260, " /", self.smallfont, (255,255,255))
         printtoscreen(screen, 10, 280, f"{self.sharedPlayerStats.tpMax:2}", self.smallfont, (255,255,255))
+
+        # Draw Status Effect Icons
+        for i, player in enumerate(self.players):
+            for j, statusEffect in enumerate(player.statusEffects):
+                self.statusEffectDrawer.draw(screen, statusEffect.icon, 72+i*200+(j%3)*64, 84+(j//3)*64)
+                printtoscreen(screen,72+i*200+(j%3)*64,84+(j//3)*64,str(statusEffect.turns),self.smallfont,(255,255,255))
+        for i, enemy in enumerate(self.enemies):
+            for j, statusEffect in enumerate(enemy.statusEffects):
+                self.statusEffectDrawer.draw(screen, statusEffect.icon, 256-(len(self.enemies)-1)*0.5*160+i*160+(j%3)*64, 292+(j//3)*64)
+                printtoscreen(screen,256-(len(self.enemies)-1)*0.5*160+i*160+(j%3)*64, 292+(j//3)*64,str(statusEffect.turns),self.smallfont,(255,255,255))
         
     
     def Update(self, screen, inputs, world):
@@ -353,6 +479,14 @@ class BattleHandler:
                 #Battle's done, everyone can go home now
                 return -3
             elif result == -2:
+                # Activate end-of-my-turn status effects
+                for effect in self.players[self.subturn].statusEffects:
+                    if effect.endOfTurn:
+                        effect.activate(True, self.subturn, len(self.players), self.players[self.subturn], world)
+                    effect.turns -= 1
+                self.players[self.subturn].statusEffects = [i for i in self.players[self.subturn].statusEffects if i.turns > 0]
+
+                
                 #Next party member!
                 self.subturn += 1
                 
@@ -389,6 +523,14 @@ class BattleHandler:
                 elif self.timing >= 30:
                     result = self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].EnemyAction(False, self.enemies, self.players, self.currentEnemyAction.targetInd, self.currentEnemyAction.potentialTargets, self.enemies[self.subturn], inputs, screen, world, self.buttonDrawer)
                     if result != -1:
+                        # Activate end-of-my-turn status effects
+                        for effect in self.enemies[self.subturn].statusEffects:
+                            if effect.endOfTurn:
+                                effect.activate(False, self.subturn, len(self.enemies), self.enemies[self.subturn], world)
+                            effect.turns -= 1
+                        self.enemies[self.subturn].statusEffects = [i for i in self.enemies[self.subturn].statusEffects if i.turns > 0]
+        
+                        # Next!
                         self.subturn += 1
                         self.timing = -1
             self.timing += 1
@@ -576,7 +718,7 @@ actionCommandList = {
     "Hidden Button + Arrow Sequence":act.MultipleActionCommands([act.pressButtonCommand(["z", "x", "c"], 52, 3, False, True),act.buttonSequenceCommand(["z", "x", "c"], 5, 60, False)],20),
     "Difficult 12 Buttons/Directions":act.buttonSequenceCommand(["up", "down", "left", "right", "z", "x", "c"], 12, 105, True),
     "Hidden 5, Hidden 3, Mash Z":act.MultipleActionCommands([act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 90, False),act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 45, False),act.buttonSequenceCommand(["z"], 16, 48, True)],30),
-    "X or Down":act.buttonSequenceCommand(["x","down"],8,105,False),
+    "X or Down":act.buttonSequenceCommand(["x","down"],6,120,False),
     "Hold X, then Up/Down":act.MultipleActionCommands([act.holdButtonCommand("x", 60, 3), act.buttonSequenceCommand(["up", "down"],8,60,True)],30),
     "Hold Z":act.holdButtonCommand("z", 60, 3), 
     "Hold X":act.holdButtonCommand("x", 60, 3),
@@ -616,7 +758,7 @@ spellList = {
     # SCIENCE SKILLS
     "Science Skill L1":Spell("Science Skill L1", ["Science Skill L1", "Magic attack, hits 1 enemy", "Press the shown button!"], "1enemy", actionCommandList["Hidden Button Press"],[DamageEffect(2.5, "magiAtk", "magiDef")]),
     "Science Skill L4":Spell("Science Skill L4", ["Science Skill L4", "Magic attack, hits all enemies", "Press the shown directions in order!"], "allenemies", actionCommandList["Lenient 5 Directions"],[DamageEffect(1.5, "magiAtk", "magiDef")]),
-    "Science Skill L7":Spell("Science Skill L7", ["Science Skill L7", "Poison one enemy", "No Action Command"], "1enemy", actionCommandList["None"],[]), # UNFINISHED
+    "Science Skill L7":Spell("Science Skill L7", ["Science Skill L7", "Poison one enemy", "No Action Command"], "1enemy", actionCommandList["None"],[DoTEffect(0.25, "magiAtk", "Science DoT", 10, "poisonWeak")]),
     "Science Skill L10":Spell("Science Skill L10", ["Science Skill L10", "Put one enemy to sleep", "No Action Command"], "1enemy", actionCommandList["None"],[]), # UNFINISHED
     "Science Skill L13":Spell("Science Skill L13", ["Science Skill L13", "Powerful magic attack, hits 1 enemy", "Press the shown button, then the shown sequence!"], "1enemy", actionCommandList["Hidden Button + Arrow Sequence"],[DamageEffect(10, "magiAtk", "magiDef")]),
     "Science Skill L16":Spell("Science Skill L16", ["Science Skill L16", "Powerful magic attack, hits all enemies", "Press the shown buttons in sequence!"], "allenemies", actionCommandList["Difficult 12 Buttons/Directions"],[DamageEffect(5, "magiAtk", "magiDef")]),
@@ -643,7 +785,7 @@ spellList = {
     # HISTORY SKILLS
     "History Skill L1":Spell("History Skill L1", ["History Skill L1", "Heal an ally", "Hold X!"], "1ally", actionCommandList["Hold X"],[HealEffect(0.7, "magiAtk")]),
     "History Skill L4":Spell("History Skill L4", ["History Skill L4", "Cures all afflictions", "on an ally", "No Action Command"], "1ally", actionCommandList["None"],[]), # UNFINISHED
-    "History Skill L7":Spell("History Skill L7", ["History Skill L7", "Gives passive regeneration", "to an ally", "Press X or DOWN as it appears!"], "1ally", actionCommandList["X or Down"],[]), # UNFINISHED
+    "History Skill L7":Spell("History Skill L7", ["History Skill L7", "Gives passive regeneration", "to an ally", "Press X or DOWN as it appears!"], "1ally", actionCommandList["X or Down"],[HoTEffect(0.3, "magiAtk", "History Regen", 5, "regen")]),
     # Revive
     "History Skill L13":Spell("History Skill L13", ["History Skill L13", "Heal party", "Hold X, then press UP and DOWN!"], "allallies", actionCommandList["Hold X, then Up/Down"],[HealEffect(0.5, "magiAtk")]),
     "History Skill L16":Spell("History Skill L16", ["History Skill L16", "Drain an enemy's life", "to heal the party", "Hold X!"], "1enemy", actionCommandList["Hold X Slow"],[MultiVampireEffect(4, 0.25, "magiAtk", "magiDef")]),
@@ -652,7 +794,7 @@ spellList = {
     "Languages Skill L1":Spell("Languages Skill L1", ["Languages Skill L1", "Lowers an enemy's defense and magic defense", "Can Stack", "Press the right direction when it appears!"], "1enemy", actionCommandList["Hidden Direction Press"],[]), # UNFINISHED
     "Languages Skill L4":Spell("Languages Skill L4", ["Languages Skill L4", "Copies the last skill used", "by an ally.", "Previous Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Triple Hit":Spell("Triple Hit", ["Triple Hit", "Hits three times", "Press the shown buttons in time!"], "1enemy", actionCommandList["Triple Hit"], [DamageEffect(1, "physAtk", "physDef") for i in range(3)]),
-    "Languages Skill L10":Spell("Languages Skill L10", ["Languages Skill L10", "Deals heavy damage over 3 turns", "Press X or C!"], "1enemy", actionCommandList["Hidden X/C Fast"],[]), # UNFINISHED
+    "Languages Skill L10":Spell("Languages Skill L10", ["Languages Skill L10", "Deals heavy damage over 3 turns", "Press X or C!"], "1enemy", actionCommandList["Hidden X/C Fast"],[DoTEffect(1, "magiAtk", "Languages DoT", 3, "poisonStrong")]), # UNFINISHED
     "Languages Skill L13":Spell("Languages Skill L13", ["Languages Skill L13", "Attacks, with a chance to find an item", "Press Z!"], "1enemy", actionCommandList["Press Z Fast"],[]), # UNFINISHED
     "Languages Skill L16":Spell("Languages Skill L16", ["Languages Skill L16", "Activates damage over time effects", "on one enemy 3 times", "Press the buttons as they appear!"], "1enemy", actionCommandList["Triple Hit"],[]), # UNFINISHED
     "Languages Skill L19":Spell("Languages Skill L19", ["Languages Skill L19", "Removes status effects,", "dealing damage relative to amount", "Up-Up-Down-Down-","-Left-Right-Left-Right-","-X-C-Z!"], "1enemy", actionCommandList["Konami Code"],[]), # UNFINISHED

@@ -56,6 +56,7 @@ camera = world.create_entity(mapScreen.Camera(0,0))
 with open("mapScreen/tiles.txt") as tileRaw:
     tileMapping = mapScreen.readTileData(tileRaw.read(), world.component_for_entity(consts, mapScreen.Consts))
 world.create_entity(mapScreen.TileArrayComponent(tileMapping))
+
 #Configure Options
 world.create_entity(dialog.Options(world.component_for_entity(consts,mapScreen.Consts).screen, 1))
 
@@ -76,21 +77,19 @@ with open("mapScreen/maps/openingArea.txt") as mapRaw:
 testMap = world.create_entity(mapDict["openingArea"])
 world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
 
-
-
-
-
-
 import battle.battle as battle # Has to be imported after screen is initialized
+
 playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux], battle.SharedStats(40, 50, 0)))
+
 with open("battle/battles.txt") as battleData:
     battleDict = world.create_entity(battle.readBattleData(battleData.read(), battle.enemies))
 
+# Player on map
 player = world.create_entity(mapScreen.Position(32,32), 
                              mapScreen.SpriteRenderer(pg.image.load("assets/art/maps/sprites/player.png").convert_alpha()),
                             mapScreen.PlayerMove(8))
 
-
+# Processors
 world.add_processor(mapScreen.InputProcessor(), priority=15)
 world.add_processor(mapScreen.PlayerProcessor(), priority=10)
 world.add_processor(mapScreen.GraphicsProcessor(), priority=5)

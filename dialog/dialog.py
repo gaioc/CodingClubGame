@@ -5,6 +5,7 @@ import esper
 from dataclass import dataclass
 from typing import List, Dict, Tuple
 import pathlib
+import battle.battle as battle
 from mapScreen.mapScreen import Input, PlayerMove, loadMap, NPCHolder, MapHolder, TileArrayComponent, Position
 import audio.audio as audio
 
@@ -211,6 +212,32 @@ class DialogLoadMap(DialogInstance):
         playerPos.predictedposy = self.playerY*32
 
         return self.next
+
+class DialogBattle(DialogInstance):
+    """
+    Start a battle defined in battles.txt by name. BattleDict must be initialized.
+    Waits until all battles are done to continue.
+    """
+    def __init__(self, battle, next):
+        self.battle = battle
+        self.next = next
+    def Activate(self):
+        self.active = True
+        self.state = 0
+    def Update(self, screen, inputs, textSpeed, playerData, world):
+        if self.state == 0:
+            print(world.get_component(PlayerData)[0][1].characters)
+            battleHolder = world.get_component(battle.BattleDict)[0][1][self.battle]
+            battle.StartBattle(battleHolder, world.get_component(PlayerData)[0][1].characters, world.get_component(PlayerData)[0][1].sharedStats, world)
+            self.state = 1
+        else:
+            done = True
+            for i, battleHandler in world.get_component(battle.BattleHandler):
+                if battleHandler.active:
+                    done = False
+            if done:
+                return self.next
+        return -1
         
 
 class DialogText(DialogInstance):
@@ -632,6 +659,8 @@ def readDialogFile(dialogFileContents):
                     finalContents.append(DialogMovePlayer(int(functionWithArgs[1])*32, int(functionWithArgs[2])*32, int(functionWithArgs[3]), int(parts[2])))
                 elif function == "\Wait":
                     finalContents.append(DialogWait(functionWithArgs[1],int(parts[2])))
+                elif function == "\Battle":
+                    finalContents.append(DialogBattle(functionWithArgs[1],int(parts[2])))
                 elif function == "\Empty":
                     finalContents.append(DialogInstance())
                 else:

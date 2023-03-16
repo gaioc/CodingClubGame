@@ -1,0 +1,15 @@
+Tutorial1
+False
+background1
+Battle!
+1
+10
+Tutorial Blob
+
+Tutorial2
+False
+background1
+Battle!
+0
+10
+Tutorial Blob

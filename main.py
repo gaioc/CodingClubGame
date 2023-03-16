@@ -5,7 +5,6 @@ import stats.equipment as equip
 import stats.stats as stats
 import stats.playerStats as pStats
 import audio.audio as audio
-import battle.battle as battle
 import mapScreen.mapScreen as mapScreen
 import random
 
@@ -23,24 +22,8 @@ with open("stats/equipment.txt") as equipData:
 with open("stats/classStats.txt") as classData:
     classDict = stats.readClassStats(classData.read())
 
+lux = pStats.Character("Lux", "None", pStats.PlayerEquip(), pStats.PlayerBaseStats(0, classDict["none"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
 
-lux = pStats.Character("Lux", "English", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["languages"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Languages Skill L10", "Psychology Skill L10", "Psychology Skill L19"])
-#lux.equip(equipDict["Notebook"].enchant(enchantDict["Augmented"]))
-#lux.equip(equipDict["Formal Wear"].enchant(enchantDict["Augmented"]))
-#lux.equip(equipDict["Six-foot Pencil"].enchant(enchantDict["Sharp"]))
-lux.hp = lux.totalStats["maxHP"]
-
-bob = pStats.Character("Bob", "Science", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["math"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Science Skill L7", "Psychology Skill L13", "Math Skill L13"])
-#bob.equip(equipDict["Test Tube"].enchant(enchantDict["Augmented"]))
-#bob.equip(equipDict["Lab Coat"].enchant(enchantDict["Warded"]))
-#bob.equip(equipDict["Prism"].enchant(enchantDict["Arcane"]))
-bob.hp = bob.totalStats["maxHP"]
-
-test = pStats.Character("Test", "Art", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["art"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),["Languages Skill L16", "Psychology Skill L16", "Languages Skill L1"])
-#test.equip(equipDict["Simple Calculator"].enchant(enchantDict["Warded"]))
-#test.equip(equipDict["Protector's Armour"].enchant(enchantDict["Heavy"]))
-#test.equip(equipDict["Circle Shield"].enchant(enchantDict["Heavy"]))
-test.hp = test.totalStats["maxHP"]
 
 world = esper.World()
 
@@ -91,22 +74,17 @@ with open("mapScreen/maps/openingArea.txt") as mapRaw:
     world.create_entity(mapDict)
 
 testMap = world.create_entity(mapDict["openingArea"])
-#world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
+world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
 
 
 
 
-playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux, bob, test], battle.SharedStats(40, 50, 0)))
 
 
-testBattle = world.create_entity(battle.BattleHandler([battle.BattleEntity(None, None, None, None).fromCharacter(i) for i in world.component_for_entity(playerData, dialog.PlayerData).characters], 
-                                                      [
-                                                          battle.BattleEnemy("Skeleton A", {"maxHP":50000,"physAtk":10,"physDef":10,"magiAtk":10,"magiDef":10}, 50000, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),battle.EnemyAI()),
-                                                          battle.BattleEnemy("Skeleton B", {"maxHP":50000,"physAtk":10,"physDef":10,"magiAtk":10,"magiDef":10}, 50000, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),battle.EnemyAI()),
-                                                          battle.BattleEnemy("Skeleton C", {"maxHP":50000,"physAtk":10,"physDef":10,"magiAtk":10,"magiDef":10}, 50000, [battle.enemyAttacks["enemyAttack"],battle.enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),battle.EnemyAI())
-                                                      ], world.component_for_entity(playerData, dialog.PlayerData).sharedStats, pg.image.load("assets/art/battle/backgrounds/background1.png").convert(), 1000000000, 100))
-world.component_for_entity(testBattle, battle.BattleHandler).Activate()
-
+import battle.battle as battle # Has to be imported after screen is initialized
+playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux], battle.SharedStats(40, 50, 0)))
+with open("battle/battles.txt") as battleData:
+    battleDict = world.create_entity(battle.readBattleData(battleData.read(), battle.enemies))
 
 player = world.create_entity(mapScreen.Position(32,32), 
                              mapScreen.SpriteRenderer(pg.image.load("assets/art/maps/sprites/player.png").convert_alpha()),

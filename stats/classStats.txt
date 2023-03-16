@@ -46,3 +46,10 @@ physAtk:2.0
 physDef:0.6
 magiAtk:1.5
 magiDef:0.7
+
+none
+maxHP:1.0
+physAtk:1.0
+physDef:1.0
+magiAtk:1.0
+magiDef:1.0

@@ -4,11 +4,12 @@ import random
 import time
 from typing import Dict, List
 import stats.playerStats as pStats
+import dialog.dialog as dialog
 import battle.actionCommands as act
 import mapScreen.mapScreen as mapScreen
 import math
 import copy
-
+pg.display.set_mode((640, 480))
 pg.font.init()
 
 
@@ -63,6 +64,7 @@ class BattleEntity:
         return self
     def updateCharacter(self, character):
         character.hp = self.hp
+        self.character = character
 class BattleEnemy(BattleEntity):
     def __init__(self, name, stats, hp, spells, sprite, enemyAI):
         self.name = name
@@ -423,7 +425,7 @@ class TemporaryText:
             world.delete_entity(id)
 
 class VictoryHandler:
-    def __init__(self, allCharacters, sharedStats, xp, gold):
+    def __init__(self, allCharacters, sharedStats, xp, gold, world):
         xpPerLevelUp = [
                    1,
                    5,
@@ -471,16 +473,22 @@ class VictoryHandler:
         self.menuList.append(DescriptionConfirmAction(["Victory!", f"Gained {xp} experience points", f"and {gold} gold."], 1, -1))
 
         sharedStats.xp += xp
-        while sharedStats.xp > xpPerLevelUp[self.allCharacters[0].character.baseStats.level]:
+        while sharedStats.xp >= xpPerLevelUp[self.allCharacters[0].character.baseStats.level]:
             sharedStats.xp -= xpPerLevelUp[self.allCharacters[0].character.baseStats.level]
             for battleCharacter in self.allCharacters:
                 character = battleCharacter.character
                 oldBase = copy.deepcopy(character.baseStats.finalStats)
                 character.baseStats.setLevel(character.baseStats.level + 1)
                 self.menuList.append(DescriptionConfirmAction([f"{character.name} grew to level {character.baseStats.level}!"] + [f"{statName.upper():8}: {oldBase[statName]:6} + {(character.baseStats.finalStats[statName] - oldBase[statName]):3} = {character.baseStats.finalStats[statName]:5}" for statName in ["maxHP", "physAtk", "physDef", "magiAtk", "magiDef"]],1, -1))
-                if character.baseStats.level in [1, 4, 7, 10, 13, 16, 19]:
+                if character.baseStats.level in [1, 4, 7, 10, 13, 16, 19] and character.playerClass.lower() != "none":
                     character.spellNames.append(spellsPerClass[character.playerClass.lower()][int((character.baseStats.level - 1)//3)])
                     self.menuList.append(DescriptionConfirmAction([f"{character.name} learned {spellsPerClass[character.playerClass.lower()][int((character.baseStats.level - 1)//3)]}!", ("Equip it in the Menu" if len(character.spellNames) > 4 else "Automatically Equipped")],1, -1))
+        for character in self.allCharacters:
+            character.updateCharacter(character.character)
+            character.character.calculate()
+        #world.get_component(dialog.PlayerData)[0][1].characters = [character.character for character in self.allCharacters]
+        #print(world.get_component(dialog.PlayerData)[0][1].characters[0].baseStats)
+        world.get_component(dialog.PlayerData)[0][1].sharedStats = sharedStats
         
     def Update(self, screen, world, inputs):
         if self.counter >= len(self.menuList):
@@ -491,10 +499,28 @@ class VictoryHandler:
                 self.counter += 1
             return -1
 
-        
+def StartBattle(battleHolder, players, sharedPlayerStats, world):
+    battleHandler = world.create_entity(battleHolder.toHandler(players, sharedPlayerStats))
+    world.component_for_entity(battleHandler, BattleHandler).Activate()
+
+class BattleHolder:
+    """Converts to BattleHandler on the spot with relevant player info."""
+    def __init__(self, enemies, background, xp, gold, escapable=True, music="Battle!"):
+        self.enemies = enemies
+        self.background = background
+        self.xp = xp
+        self.gold = gold
+        self.escapable = escapable
+        self.music = music
+    def toHandler(self, players, sharedPlayerStats):
+        print(self.enemies)
+        battlePlayers = [BattleEntity(None, None, None, None).fromCharacter(i) for i in players]
+        return BattleHandler(battlePlayers, self.enemies, sharedPlayerStats, self.background, self.xp, self.gold, escapable=self.escapable, music=self.music)
 
 class BattleHandler:
-    def __init__(self, players, enemies, sharedPlayerStats, background, xp, gold):
+    def __init__(self, players, enemies, sharedPlayerStats, background, xp, gold, escapable=True, music="Battle!"):
+        self.escapable = escapable
+        self.music = music
         self.allCharacters = players
         self.players = players[:3]
         self.enemies = enemies
@@ -521,6 +547,13 @@ class BattleHandler:
         for i, enemy in enumerate(self.enemies):
             enemy.id = i
         self.populateActions()
+    def Deactivate(self, world):
+        for character in self.allCharacters:
+            character.updateCharacter(character.character)
+        self.active = False
+        for i, entity in world.get_component(TemporaryText):
+            world.delete_entity(i)
+        return -3
     def populateActions(self):
         current = self.players[self.subturn]
 
@@ -529,7 +562,7 @@ class BattleHandler:
         else:
             self.actionDict["Start"] = MenuOptionsAction(["Fight", "Run"], ["Fight", "Run"], "Start")
         
-        self.actionDict["Fight"] = DescriptionConfirmAction(["Fight", "Normal attack.", "Press Z when the circle lights up!"], "FightTarget", "Start")
+        self.actionDict["Fight"] = DescriptionConfirmAction(["Fight", "Normal attack.", "Press Z when the last circle lights up!"], "FightTarget", "Start")
         self.actionDict["FightTarget"] = MenuOptionsAction([enemy.name for enemy in self.enemies if enemy.hp > 0], [f"FightAction{i}" for i in range(len(self.enemies))], "Fight")
         for i in range(len(self.enemies)):
             self.actionDict[f"FightAction{i}"] = PerformAction(Spell("Fight", ["Fight", "Normal attack.", "Press Z when the last circle lights up!"], "1enemy", act.pressButtonCommand(["z"], 48, 3, True, False), [DamageEffect(1, "physAtk", "physDef")]), i, self.enemies, current)
@@ -562,8 +595,10 @@ class BattleHandler:
                 self.actionDict[f"SpellTarget{i}"] = MenuOptionsAction(["All Enemies"], [f"Spell{i}|0" for ind in range(len(possibleTargets))], f"SpellDescription{i}")
                 self.actionDict[f"Spell{i}|0"] = PerformAction(current.spells[i], 0, possibleTargets, current)
             
-
-        self.actionDict["Run"] = RunAwayAction()
+        if self.escapable:
+            self.actionDict["Run"] = RunAwayAction()
+        else:
+            self.actionDict["Run"] = DescriptionConfirmAction(["Can't run from this battle!"], "Start", "Start")
         
         self.currentIndex = "Start"
 
@@ -616,7 +651,7 @@ class BattleHandler:
         if self.progress == "fighting":
             if len(self.enemies) < 1:
                 self.progress = "victory"
-                self.victoryHandler = VictoryHandler(self.allCharacters, self.sharedPlayerStats, self.xp, self.gold)
+                self.victoryHandler = VictoryHandler(self.allCharacters, self.sharedPlayerStats, self.xp, self.gold, world)
             elif not(any([p for p in self.players if p.hp > 0])):
                 self.progress = "defeat"
         
@@ -624,7 +659,7 @@ class BattleHandler:
         if self.progress == "victory":
             result = self.victoryHandler.Update(screen, inputs, world)
             if result == 1:
-                return -3
+                return self.Deactivate(world)
             else:
                 return -1
         
@@ -649,7 +684,7 @@ class BattleHandler:
             
             if result == -3:
                 # Run away
-                return -3
+                return self.Deactivate()
             elif result == -2:
                 # Activate end-of-my-turn status effects
                 for effect in self.players[self.subturn].statusEffects:
@@ -869,7 +904,22 @@ class BattleProcessor(esper.Processor):
             if battleHandler.active:
                 battleHandler.Update(screen, inputs, self.world)
 
+class BattleDict(Dict):
+    pass
 
+def readBattleData(data, enemyData):
+    battleDict = BattleDict()
+    battles = data.split("\n\n")
+    for battle in battles:
+        name, escapable, background, music, xp, gold = battle.split("\n")[:6]
+        escapable = (escapable == "True")
+        background = pg.image.load(f"assets/art/battle/backgrounds/{background}.png").convert()
+        xp = int(xp)
+        gold = int(gold)
+        enemyNames = battle.split("\n")[6:]
+        enemyList = [BattleEnemy(enemies[enemyName].name, copy.deepcopy(enemies[enemyName].baseStats), enemies[enemyName].hp, copy.deepcopy(enemies[enemyName].spells), enemies[enemyName].sprite, enemies[enemyName].enemyAI) for enemyName in enemyNames]
+        battleDict[name] = BattleHolder(enemyList, background, xp, gold, escapable, music)
+    return battleDict
 
 
 guardCommands = {
@@ -880,6 +930,12 @@ enemyAttacks = {
     "enemyAttack":Spell("Attack", ["Normal Attack"], "1enemy", guardCommands["normalGuard"], [DamageEffect(1, "physAtk", "physDef")]),
     "boneSpray":Spell("Bone Spray", ["Shoots bones"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(1, "magiAtk", "magiDef")])
 }
+
+enemies = {
+    "Tutorial Blob":BattleEnemy("Dark Blob", {"maxHP":10,"physAtk":8,"physDef":8,"magiAtk":8,"magiDef":8}, 10, [enemyAttacks["enemyAttack"]], pg.image.load("assets/art/battle/enemies/darkBlob.png").convert_alpha(),EnemyAI()),
+    "Testing Skeleton":BattleEnemy("Skeleton", {"maxHP":50000,"physAtk":10,"physDef":10,"magiAtk":10,"magiDef":10}, 50000, [enemyAttacks["enemyAttack"],enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),EnemyAI()),
+}
+
 actionCommandList = {
     "None":act.ActionCommand(),
     "Press Z Fast":act.pressButtonCommand(["z"], 48, 7, True, True),
@@ -971,6 +1027,6 @@ spellList = {
     "Triple Hit":Spell("Triple Hit", ["Triple Hit", "Hits three times", "Press the shown buttons in time!"], "1enemy", actionCommandList["Triple Hit"], [DamageEffect(1, "physAtk", "physDef") for i in range(3)]),
     "Languages Skill L10":Spell("Languages Skill L10", ["Languages Skill L10", "Deals heavy damage over 3 turns", "Press X or C!"], "1enemy", actionCommandList["Hidden X/C Fast"],[DoTEffect(1, "magiAtk", "Languages DoT", 3, "poisonStrong")]),
     "Languages Skill L13":Spell("Languages Skill L13", ["Languages Skill L13", "Attacks, with a chance to find an item", "Press Z!"], "1enemy", actionCommandList["Press Z Fast"],[]), # UNFINISHED
-    "Languages Skill L16":Spell("Languages Skill L16", ["Languages Skill L16", "Activates damage over time effects", "on one enemy 3 times", "No Action Command"], "1enemy", actionCommandList["None"],[ActivateEffects() for x in range(3)]), # UNFINISHED
+    "Languages Skill L16":Spell("Languages Skill L16", ["Languages Skill L16", "Activates end-of-turn effects", "on one enemy 3 times", "No Action Command"], "1enemy", actionCommandList["None"],[ActivateEffects() for x in range(3)]), # UNFINISHED
     "Languages Skill L19":Spell("Languages Skill L19", ["Languages Skill L19", "Removes status effects,", "dealing damage relative to amount", "Up-Up-Down-Down-","-Left-Right-Left-Right-","-X-C-Z!"], "1enemy", actionCommandList["Konami Code"],[]), # UNFINISHED
 }

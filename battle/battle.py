@@ -1,6 +1,7 @@
 import pygame as pg
 import esper
 import random
+import time
 from typing import Dict, List
 import stats.playerStats as pStats
 import battle.actionCommands as act
@@ -238,9 +239,9 @@ class DoTEffect(SpellEffect):
             if self.name not in [x.name for x in target.statusEffects]:
                 target.statusEffects.append(DoTStatusEffect(self.name, self.turns, attacking, self.icon))
             else:
-                for i, statusEffect in enumerate(target.statusEffects):
+                for j, statusEffect in enumerate(target.statusEffects):
                     if statusEffect.name == self.name:
-                        target.statusEffects[i] = DoTStatusEffect(self.name, self.turns, attacking, self.icon)
+                        target.statusEffects[j] = DoTStatusEffect(self.name, self.turns, attacking, self.icon)
 class HoTEffect(SpellEffect):
     """Inflict regen over time effect on entity"""
     def __init__(self, amount, offensive, name, turns, icon):
@@ -255,9 +256,17 @@ class HoTEffect(SpellEffect):
             if self.name not in [x.name for x in target.statusEffects]:
                 target.statusEffects.append(HoTStatusEffect(self.name, self.turns, attacking, self.icon))
             else:
-                for i, statusEffect in enumerate(target.statusEffects):
+                for j, statusEffect in enumerate(target.statusEffects):
                     if statusEffect.name == self.name:
-                        target.statusEffects[i] = HoTStatusEffect(self.name, self.turns, attacking, self.icon)
+                        target.statusEffects[j] = HoTStatusEffect(self.name, self.turns, attacking, self.icon)
+class ActivateEffects(SpellEffect):
+    """Activate persistent effects, and don't reduce their duration."""
+    def __init__(self):
+        pass
+    def activateEffect(self, user, player, targets, players, enemies, actionCommandResult, world):
+        for i, target in enumerate(targets):
+            for j, statusEffect in enumerate(target.statusEffects):
+                statusEffect.activate(not(player), i, (len(enemies) if player else len(players)), target, world)
 
 class StatChangeFixedEffect(SpellEffect):
     """Inflict a stat buff/debuff of fixed strength on entity for a certain amount of turns."""
@@ -302,6 +311,22 @@ class StatChangeScalingEffect(SpellEffect):
                         target.statusEffects[i] = StatChangeStatusEffect(self.name, self.turns, 
                                                                    [(StatModifier(self.name, total), stat) for stat in self.stats],
                                                                    self.icon)
+class StatScalingStackingEffect(SpellEffect):
+    """Inflict a stat buff/debuff of scaling strength on entity for a certain amount of turns that stacks."""
+    def __init__(self, scaling, stats, amount, name, turns, icon):
+        self.scaling = scaling
+        self.stats = stats
+        self.amount = amount
+        self.name = name
+        self.turns = turns
+        self.icon = icon
+    def activateEffect(self, user, player, targets, players, enemies, actionCommandResult, world):
+        total = math.log(user.stats[self.scaling], 2) * self.amount * actionCommandResult
+        print(total)
+        for i, target in enumerate(targets):
+                target.statusEffects.append(StatChangeStatusEffect(self.name, self.turns, 
+                                                                   [(StatModifier(self.name+str(time.time())+str(random.random()), total), stat) for stat in self.stats],
+                                                                   self.icon))
 
 
 
@@ -919,7 +944,7 @@ spellList = {
     "Math Skill L4":Spell("Math Skill L4", ["Math Skill L4", "Pulls damage away from allies,", "taking damage in the process for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L7":Spell("Math Skill L7", ["Math Skill L7", "Shields party from CRITs", "for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L10":Spell("Math Skill L10", ["Math Skill L10", "Creates a ward over the party", "that absorbs damage until destroyed", "Hold C, then release!"], "allallies", actionCommandList["Hold C Fast"],[]), # UNFINISHED
-    "Math Skill L13":Spell("Math Skill L13", ["Math Skill L13", "Increases Defensive Stats", "for 5 turns", "No Action Command"], "self", actionCommandList["None"],[StatChangeFixedEffect(["physDef", "magiDef"], 0.8, "Math L13", 4, "buffBothDef")]), # UNFINISHED
+    "Math Skill L13":Spell("Math Skill L13", ["Math Skill L13", "Increases Defensive Stats", "for 5 turns", "No Action Command"], "self", actionCommandList["None"],[StatChangeFixedEffect(["physDef", "magiDef"], 0.8, "Math L13", 4, "buffBothDef")]),
     "Math Skill L16":Spell("Math Skill L16", ["Math Skill L16", "Braces self for a physical attack,", "dealing damage back when guarded", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L19":Spell("Math Skill L19", ["Math Skill L19", "Deals heavy damage with user's physical defense", "Hold C, then release!"], "1enemy", actionCommandList["Hold C Slow"],[DamageEffect(5, "physDef", "physDef")]),
     
@@ -930,22 +955,22 @@ spellList = {
     "Psychology Skill L10":Spell("Psychology Skill L10", ["Psychology Skill L10", "Increases an ally's crit chance", "Press the shown directions in time!"], "1ally", actionCommandList["4 Directions in a Row"],[]), # UNFINISHED
     "Psychology Skill L13":Spell("Psychology Skill L13", ["Psychology Skill L13", "Increases an ally's physical attack", "Press the shown directions as they appear!"], "1ally", actionCommandList["Hidden 3 Fast Directions"],[StatChangeScalingEffect("magiAtk", ["physAtk"], 0.1, "Psych L13 PhysAtk", 4, "buffPhysAtk")]), 
     "Psychology Skill L16":Spell("Psychology Skill L16", ["Psychology Skill L16", "Increases an ally's magical attack", "Press the shown directions as they appear!"], "1ally", actionCommandList["Hidden 3 Fast Directions"],[StatChangeScalingEffect("magiAtk", ["magiAtk"], 0.1, "Psych L13 MagiAtk", 4, "buffMagiAtk")]), 
-    "Psychology Skill L19":Spell("Psychology Skill L19", ["Psychology Skill L19", "Increases all of the party's stats!", "Press the shown directions as they appear", "twice, then mash Z!"], "allallies", actionCommandList["Hidden 5, Hidden 3, Mash Z"],[StatChangeScalingEffect("magiAtk", ["physAtk"], 0.2, "Psych L19 PhysAtk", 4, "buffPhysAtk"),StatChangeScalingEffect("magiAtk", ["magiAtk"], 0.2, "Psych L19 MagiAtk", 4, "buffMagiAtk"),StatChangeScalingEffect("magiAtk", ["physDef"], 0.2, "Psych L19 PhysDef", 4, "buffPhysDef"),StatChangeScalingEffect("magiAtk", ["magiDef"], 0.2, "Psych L19 MagiDef", 4, "buffMagiDef")]), # UNFINISHED
+    "Psychology Skill L19":Spell("Psychology Skill L19", ["Psychology Skill L19", "Increases all of the party's stats!", "Press the shown directions as they appear", "twice, then mash Z!"], "allallies", actionCommandList["Hidden 5, Hidden 3, Mash Z"],[StatChangeScalingEffect("magiAtk", ["physAtk"], 0.2, "Psych L19 PhysAtk", 4, "buffPhysAtk"),StatChangeScalingEffect("magiAtk", ["magiAtk"], 0.2, "Psych L19 MagiAtk", 4, "buffMagiAtk"),StatChangeScalingEffect("magiAtk", ["physDef"], 0.2, "Psych L19 PhysDef", 4, "buffPhysDef"),StatChangeScalingEffect("magiAtk", ["magiDef"], 0.2, "Psych L19 MagiDef", 4, "buffMagiDef")]),
     
     # HISTORY SKILLS
     "History Skill L1":Spell("History Skill L1", ["History Skill L1", "Heal an ally", "Hold X!"], "1ally", actionCommandList["Hold X"],[HealEffect(0.7, "magiAtk")]),
-    "History Skill L4":Spell("History Skill L4", ["History Skill L4", "Cures all afflictions", "on an ally", "No Action Command"], "1ally", actionCommandList["None"],[]), # UNFINISHED
+    "History Skill L4":Spell("History Skill L4", ["History Skill L4", "Cures all conditions", "on an ally", "No Action Command"], "1ally", actionCommandList["None"],[]), # UNFINISHED
     "History Skill L7":Spell("History Skill L7", ["History Skill L7", "Gives passive regeneration", "to an ally", "Press X or DOWN as it appears!"], "1ally", actionCommandList["X or Down"],[HoTEffect(0.3, "magiAtk", "History Regen", 5, "regen")]),
     # Revive
     "History Skill L13":Spell("History Skill L13", ["History Skill L13", "Heal party", "Hold X, then press UP and DOWN!"], "allallies", actionCommandList["Hold X, then Up/Down"],[HealEffect(0.5, "magiAtk")]),
     "History Skill L16":Spell("History Skill L16", ["History Skill L16", "Drain an enemy's life", "to heal the party", "Hold X!"], "1enemy", actionCommandList["Hold X Slow"],[MultiVampireEffect(4, 0.25, "magiAtk", "magiDef")]),
     "History Skill L19":Spell("History Skill L19", ["History Skill L19", "Revive all fallen party member and heals them greatly", "Mash UP, then DOWN, then X!"], "allallies", actionCommandList["Mash Up/Down/X"],[ReviveEffect(),HealEffect(2, "magiAtk")]), 
 
-    "Languages Skill L1":Spell("Languages Skill L1", ["Languages Skill L1", "Lowers an enemy's defense and magic defense", "Can Stack", "Press the right direction when it appears!"], "1enemy", actionCommandList["Hidden Direction Press"],[]), # UNFINISHED
+    "Languages Skill L1":Spell("Languages Skill L1", ["Languages Skill L1", "Lowers an enemy's defense and magic defense", "Can Stack", "Press the right direction when it appears!"], "1enemy", actionCommandList["Hidden Direction Press"],[StatScalingStackingEffect("magiAtk", ["physDef","magiDef"], -0.05, "Languages L1 BothDef", 3, "debuffBothDef")]),
     "Languages Skill L4":Spell("Languages Skill L4", ["Languages Skill L4", "Copies the last skill used", "by an ally.", "Previous Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Triple Hit":Spell("Triple Hit", ["Triple Hit", "Hits three times", "Press the shown buttons in time!"], "1enemy", actionCommandList["Triple Hit"], [DamageEffect(1, "physAtk", "physDef") for i in range(3)]),
-    "Languages Skill L10":Spell("Languages Skill L10", ["Languages Skill L10", "Deals heavy damage over 3 turns", "Press X or C!"], "1enemy", actionCommandList["Hidden X/C Fast"],[DoTEffect(1, "magiAtk", "Languages DoT", 3, "poisonStrong")]), # UNFINISHED
+    "Languages Skill L10":Spell("Languages Skill L10", ["Languages Skill L10", "Deals heavy damage over 3 turns", "Press X or C!"], "1enemy", actionCommandList["Hidden X/C Fast"],[DoTEffect(1, "magiAtk", "Languages DoT", 3, "poisonStrong")]),
     "Languages Skill L13":Spell("Languages Skill L13", ["Languages Skill L13", "Attacks, with a chance to find an item", "Press Z!"], "1enemy", actionCommandList["Press Z Fast"],[]), # UNFINISHED
-    "Languages Skill L16":Spell("Languages Skill L16", ["Languages Skill L16", "Activates damage over time effects", "on one enemy 3 times", "Press the buttons as they appear!"], "1enemy", actionCommandList["Triple Hit"],[]), # UNFINISHED
+    "Languages Skill L16":Spell("Languages Skill L16", ["Languages Skill L16", "Activates damage over time effects", "on one enemy 3 times", "No Action Command"], "1enemy", actionCommandList["None"],[ActivateEffects() for x in range(3)]), # UNFINISHED
     "Languages Skill L19":Spell("Languages Skill L19", ["Languages Skill L19", "Removes status effects,", "dealing damage relative to amount", "Up-Up-Down-Down-","-Left-Right-Left-Right-","-X-C-Z!"], "1enemy", actionCommandList["Konami Code"],[]), # UNFINISHED
 }

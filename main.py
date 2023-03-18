@@ -6,6 +6,8 @@ import stats.stats as stats
 import stats.playerStats as pStats
 import audio.audio as audio
 import mapScreen.mapScreen as mapScreen
+import battle.battle as battle
+import menu.menu as menu
 import random
 
 
@@ -22,7 +24,9 @@ with open("stats/equipment.txt") as equipData:
 with open("stats/classStats.txt") as classData:
     classDict = stats.readClassStats(classData.read())
 
-lux = pStats.Character("Lux", "None", pStats.PlayerEquip(), pStats.PlayerBaseStats(0, classDict["none"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+lux = pStats.Character("Lux", "None", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["none"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+lux2 = pStats.Character("Lux 2", "Psychology", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["psychology"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+lux3 = pStats.Character("Lux 3", "Math", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["math"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
 
 
 world = esper.World()
@@ -75,11 +79,11 @@ with open("mapScreen/maps/openingArea.txt") as mapRaw:
     world.create_entity(mapDict)
 
 testMap = world.create_entity(mapDict["openingArea"])
-world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
+######world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
 
-import battle.battle as battle # Has to be imported after screen is initialized
 
-playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux], battle.SharedStats(40, 50, 0)))
+
+playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux,lux2,lux3], battle.SharedStats(40, 50, 0, 0)))
 
 with open("battle/battles.txt") as battleData:
     battleDict = world.create_entity(battle.readBattleData(battleData.read(), battle.enemies))
@@ -88,6 +92,17 @@ with open("battle/battles.txt") as battleData:
 player = world.create_entity(mapScreen.Position(32,32), 
                              mapScreen.SpriteRenderer(pg.image.load("assets/art/maps/sprites/player.png").convert_alpha()),
                             mapScreen.PlayerMove(8))
+
+testMenu = menu.Menu(
+    {
+        "Background Layer 0":menu.BackgroundMenu(True),
+        "Portrait 0":menu.PortraitMenu(2,2,True,0),
+        "Portrait 1":menu.PortraitMenu(2,144,True,1),
+        "Portrait 2":menu.PortraitMenu(2,286,True,2),
+        "SharedStatsViewer":menu.SharedStatsMenu(2,426,True),
+        "OptionsSidebar":menu.OptionsMenu(452,2,188,474,["View Stats", "Equipment", "Inventory", "Change Spells", "Change Order"], True)
+    }
+)
 
 # Processors
 world.add_processor(mapScreen.InputProcessor(), priority=15)
@@ -100,8 +115,9 @@ world.add_processor(dialog.DialogProcessor(), priority=0)
 i = 0
 while 1:
     world.process()
+    testMenu.Update(world.component_for_entity(consts, mapScreen.Consts).screen, world, world.component_for_entity(inputs, mapScreen.Input))
     pg.display.flip()
-    clock.tick(30) #technically configurable: can run fine at 60, suffers from frame drops if you go higher
+    clock.tick(30)
     if i > int(clock.get_fps()):
         print(clock.get_fps()) #see console for performance
         i = 0

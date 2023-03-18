@@ -8,6 +8,7 @@ import pathlib
 import battle.battle as battle
 from mapScreen.mapScreen import Input, PlayerMove, loadMap, NPCHolder, MapHolder, TileArrayComponent, Position
 import audio.audio as audio
+from textwrap import wrap
 
 #PYGAME DEPENDENCIES
 pg.font.init()
@@ -271,12 +272,14 @@ class DialogText(DialogInstance):
         #cls()
         #Draw text
         
-        toDisplay = list(self.text[0:int(self.textInd+textSpeed)])
+        toDisplay = self.text[0:int(self.textInd+textSpeed)]
         
-        wrapping = 64
+        wrapping = 60
+
+        wrapped = wrap(toDisplay, width=wrapping)
         
-        for i in range(0, len(toDisplay), wrapping):
-            printScr("".join(toDisplay[i:i+wrapping]), 16, 394+20*i//wrapping, (255,255,255), self.font, screen)
+        for i in range(0, len(wrapped)):
+            printScr("".join(wrapped[i]), 16, 394+20*i, (255,255,255), self.font, screen)
             finalPos = i
 
         if int(self.textInd / textSpeed) % 3 == 0 and self.textInd <= len(self.text):
@@ -298,9 +301,9 @@ class DialogText(DialogInstance):
         if self.textInd > len(self.text):
             if len(self.playerOptions) > 0:
                 for i in range(len(self.playerOptions)):
-                    printScr(f"{self.playerOptions[i]}", 16, 416+20*i+finalPos, (255,255,255), self.font, screen)
+                    printScr(f"{self.playerOptions[i]}", 16, 416+20*i+finalPos*20, (255,255,255), self.font, screen)
                 #Find where to jump to from this point
-                pg.draw.circle(screen, (255,255,255), (12, 416+20*self.chosenOption+finalPos), 4)
+                pg.draw.circle(screen, (255,255,255), (12, 416+20*self.chosenOption+finalPos*20), 4)
                 if self.btnHeld:
                     if not(any(inputs.buttons.values())):
                         self.btnHeld = False

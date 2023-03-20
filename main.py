@@ -24,9 +24,10 @@ with open("stats/equipment.txt") as equipData:
 with open("stats/classStats.txt") as classData:
     classDict = stats.readClassStats(classData.read())
 
-lux = pStats.Character("Lux", "None", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["none"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
-lux2 = pStats.Character("Lux 2", "Psychology", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["psychology"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
-lux3 = pStats.Character("Lux 3", "Math", pStats.PlayerEquip(), pStats.PlayerBaseStats(10, classDict["math"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+lux = pStats.Character("Lux", "None", pStats.PlayerEquip(), pStats.PlayerBaseStats(20, classDict["none"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+lux2 = pStats.Character("Lux 2", "Psychology", pStats.PlayerEquip(), pStats.PlayerBaseStats(20, classDict["psychology"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+lux3 = pStats.Character("Lux 3", "Math", pStats.PlayerEquip(), pStats.PlayerBaseStats(20, classDict["math"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+
 
 
 world = esper.World()
@@ -39,6 +40,7 @@ inputs = world.create_entity(mapScreen.Input({
     "right":[pg.K_RIGHT, pg.K_d],
     "confirm":[pg.K_z, pg.K_RETURN],
     "cancel":[pg.K_x, pg.K_LSHIFT, pg.K_RSHIFT],
+    "menu":[pg.K_c,pg.K_ESCAPE],
     "z":[pg.K_z],
     "x":[pg.K_x],
     "c":[pg.K_c]
@@ -93,21 +95,12 @@ player = world.create_entity(mapScreen.Position(32,32),
                              mapScreen.SpriteRenderer(pg.image.load("assets/art/maps/sprites/player.png").convert_alpha()),
                             mapScreen.PlayerMove(8))
 
-testMenu = menu.Menu(
-    {
-        "Background Layer 0":menu.BackgroundMenu(True),
-        "Portrait 0":menu.PortraitMenu(2,2,True,0),
-        "Portrait 1":menu.PortraitMenu(2,144,True,1),
-        "Portrait 2":menu.PortraitMenu(2,286,True,2),
-        "SharedStatsViewer":menu.SharedStatsMenu(2,426,True),
-        "OptionsSidebar":menu.OptionsMenu(452,2,188,474,["View Stats", "Equipment", "Inventory", "Change Spells", "Change Order"], True)
-    }
-)
-
+testMenu = menu.PauseMenu()
+testMenu.Activate()
 # Processors
 world.add_processor(mapScreen.InputProcessor(), priority=15)
 world.add_processor(mapScreen.PlayerProcessor(), priority=10)
-world.add_processor(mapScreen.GraphicsProcessor(), priority=5)
+#world.add_processor(mapScreen.GraphicsProcessor(), priority=5)
 world.add_processor(battle.BattleProcessor(), priority=1)
 world.add_processor(dialog.DialogProcessor(), priority=0)
 
@@ -115,7 +108,7 @@ world.add_processor(dialog.DialogProcessor(), priority=0)
 i = 0
 while 1:
     world.process()
-    testMenu.Update(world.component_for_entity(consts, mapScreen.Consts).screen, world, world.component_for_entity(inputs, mapScreen.Input))
+    testMenu.Update(world.component_for_entity(consts, mapScreen.Consts).screen, world, world.component_for_entity(inputs, mapScreen.Input).buttons)
     pg.display.flip()
     clock.tick(30)
     if i > int(clock.get_fps()):

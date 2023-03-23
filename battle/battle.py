@@ -108,6 +108,10 @@ class Spell:
         # GUARD ACTION COMMAND GOES HERE!
         result = self.actionCommand.Update(inputs, screen, buttonDrawer)
 
+        if result == 1:
+            world.create_entity(TemporaryText("NICE!", (255,100,0), 10, 80,120))
+        
+        
         if result >= 0:
             for effect in self.effects:
                 effect.activateEffect(user, enemy, targets, enemies, players, 1-result/2, world)
@@ -122,6 +126,9 @@ class Spell:
         # ACTION COMMAND GOES HERE!
         result = self.actionCommand.Update(inputs, screen, buttonDrawer)
 
+        if result == 1:
+            world.create_entity(TemporaryText("NICE!", (255,100,0), 10, 80,120))
+        
         if result >= 0:
             for effect in self.effects:
                 effect.activateEffect(user, player, targets, players, enemies, (result+1)/2, world)

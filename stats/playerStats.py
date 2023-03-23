@@ -79,6 +79,7 @@ class Character:
         self.baseStats = baseStats
         self.spellNames = spellNames
         self.playerClass = playerClass
+        self.skillPoints = 0
 
         self.totalStats = dict()
         self.calculate()

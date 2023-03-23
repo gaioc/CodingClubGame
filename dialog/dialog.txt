@@ -1,23 +1,22 @@
 Opening Scene
-???:Hello! You must be here for Scotty's speech!||1
-???:What's that? You don't know what I'm talking about?||2
-???:You really don't want to miss it!||3
-???:Come on! It's just up this way.||4
-\MovePlayer 25 1 4||5
-[Insert cutscene here]||6
-\LoadMap assemblyArea 13 14||7
-???:Watch out!||8
-\Battle Tutorial1||9
-[Choose Class Here]||10
-???:Wow, you're pretty strong!||11
-???:There's still one more. How about I teach you how to use that new skill of yours?||12
-\Battle Tutorial2||13
-???:What are we going to do now? Scotty's gone, and those things are dangerous.||14
-???:What's that? You want to help?||15
-\LoadMap theHub 12 10||16
-???:I can't let you go alone though. Why don't you check out the lockers and see if anyone wants to help?||17
-???:It's just to your left.||18
-???:You can also pass through the armoury over here to pick up some equipment if you want.||19
+???:Hello there! You must be here for Scotty's speech!||1
+???:What's that? You don't know what I'm talking about? You really don't want to miss it!||2
+???:Come on! It's just up this way.||3
+\MovePlayer 25 1 4||4
+[Insert cutscene here]||5
+\LoadMap assemblyArea 13 14||6
+???:Watch out!||7
+\Battle Tutorial1||8
+\ClassChoice||9
+???:Wow, you're pretty strong!||10
+???:There's still one more. How about I teach you how to use that new skill of yours?||11
+\Battle Tutorial2||12
+???:What are we going to do now? Scotty's gone, and those things are dangerous.||13
+???:What's that? You want to help?||14
+\LoadMap theHub 12 10||15
+???:I can't let you go alone though. Why don't you check out the lockers and see if anyone wants to help?||16
+???:It's just to your left.||17
+???:You can also pass through the armoury over here to pick up some equipment if you want.||18
 ???:Come back to me once you're done.||-2
 
 Empty

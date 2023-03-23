@@ -9,6 +9,7 @@ from typing import Tuple, List, Dict
 import random
 import dialog.dialog as dialog
 import audio.audio as audio
+import menu.menu as menu
 clock = pg.time.Clock()
 
 def clamp(n, nmin, nmax):
@@ -200,15 +201,22 @@ class Input:
         #print(self.buttons)
         pg.event.pump()
 class PlayerMove:
-    """Component that controls the movement of an entity using inputs."""
+    """Component that controls the movement of an entity using inputs. Also includes a reference to the pause menu."""
     speed : float = 32
     active : bool = True
-    def __init__(self, speed):
+    def __init__(self, speed, world):
         self.speed = speed
+        self.holdingMenu = True
+        self.pauseMenu = world.create_entity(menu.PauseMenu(world))
     def Activate(self):
         self.active = True
+        self.holdingMenu = True
+    def Sync(self):
+        """Resets some values."""
+        self.holdingMenu = True
     def Deactivate(self):
         self.active = False
+        self.holdingMenu = True
     def Update(self, inputs, position, tileMap, npcs, cutsceneTriggers, world, playerData):
         """Move player based on inputs. 
         Needs a reference to the player's position, and the inputs."""
@@ -221,6 +229,15 @@ class PlayerMove:
         buttons = inputs.buttons
         if not(all([btn in buttons for btn in ["up", "down", "left", "right"]])):
             raise RuntimeError("Buttons not fully assigned")
+        
+        if buttons["menu"] and not(self.holdingMenu):
+            print("PAUSE")
+            world.component_for_entity(self.pauseMenu, menu.Menu).Activate()
+            return 0
+
+        if not(buttons["menu"]):
+            self.holdingMenu = False
+        
         if not(position.moving):
             try:
                 if buttons["up"] and tileMap.tileMapping.tileData[tileMap.mapData[position.predictedposy//32 - 1][position.predictedposx//32]].walkable:
@@ -389,7 +406,7 @@ class PlayerProcessor(esper.Processor):
         if not(currentMap):
             return 0
         player, position = self.world.get_components(PlayerMove, Position)[0][1]
-        if player.active:
+        if player.active and not(any(m[1].active for m in self.world.get_component(menu.Menu))):
             player.Update(inputs, position, currentMap, npcs, cutsceneTriggers, self.world, playerData)
         if consts.screenSize[0] > currentMap.mapSize[0]*32:
             camera.xpos = currentMap.mapSize[0]*16-consts.screenSize[0]/2

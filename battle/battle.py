@@ -659,6 +659,9 @@ class BattleHandler:
         
         # If battle has finished, run either the game over or the victory handler with the given statistics.
         if self.progress == "victory":
+            # Draw temporary text
+            for i, entity in world.get_component(TemporaryText):
+                entity.Update(screen, world, i)
             result = self.victoryHandler.Update(screen, inputs, world)
             if result == 1:
                 return self.Deactivate(world)
@@ -934,7 +937,7 @@ enemyAttacks = {
 }
 
 enemies = {
-    "Tutorial Blob":BattleEnemy("Dark Blob", {"maxHP":10,"physAtk":8,"physDef":8,"magiAtk":8,"magiDef":8}, 10, [enemyAttacks["enemyAttack"]], pg.image.load("assets/art/battle/enemies/darkBlob.png").convert_alpha(),EnemyAI()),
+    "Tutorial Blob":BattleEnemy("Dark Blob", {"maxHP":10,"physAtk":5,"physDef":5,"magiAtk":5,"magiDef":5}, 10, [enemyAttacks["enemyAttack"]], pg.image.load("assets/art/battle/enemies/darkBlob.png").convert_alpha(),EnemyAI()),
     "Testing Skeleton":BattleEnemy("Skeleton", {"maxHP":50000,"physAtk":10,"physDef":10,"magiAtk":10,"magiDef":10}, 50000, [enemyAttacks["enemyAttack"],enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),EnemyAI()),
 }
 
@@ -1007,7 +1010,7 @@ spellList = {
     "Math Skill L19":Spell("Math Skill L19", ["Math Skill L19", "Deals heavy damage with user's physical defense", "Hold C, then release!"], "1enemy", actionCommandList["Hold C Slow"],[DamageEffect(5, "physDef", "physDef")]),
     
     # PSYCHOLOGY SKILLS
-    "Psychology Skill L1":Spell("Psychology Skill L1", ["Psychology Skill L1", "Lowers an enemy's attack and magic attack", "Press the shown directions in order!"], "1enemy", actionCommandList["Lenient 5 Directions"],[StatChangeScalingEffect("magiAtk", ["physAtk"], -0.1, "Psych L1 PhysAtk", 4, "debuffPhysAtk"), StatChangeScalingEffect("magiAtk", ["magiAtk"], -0.1, "Psych L1 MagiAtk", 4, "debuffMagiAtk")]),
+    "Psychology Skill L1":Spell("Psychology Skill L1", ["Psychology Skill L1", "Lowers an enemy's physical and magic attack", "Press the shown directions in order!"], "1enemy", actionCommandList["Lenient 5 Directions"],[StatChangeScalingEffect("magiAtk", ["physAtk"], -0.1, "Psych L1 PhysAtk", 4, "debuffPhysAtk"), StatChangeScalingEffect("magiAtk", ["magiAtk"], -0.1, "Psych L1 MagiAtk", 4, "debuffMagiAtk")]),
     "Psychology Skill L4":Spell("Psychology Skill L4", ["Psychology Skill L4", "Magic attack, hits 1 enemy", "Hold X!"], "1enemy", actionCommandList["Hold X"],[DamageEffect(2.5, "magiAtk", "magiDef")]),
     "Psychology Skill L7":Spell("Psychology Skill L7", ["Psychology Skill L7", "Raises the party's defenses", "Press the shown directions as they appear!"], "allallies", actionCommandList["Hidden 5 Directions"],[StatChangeScalingEffect("magiAtk", ["physDef"], 0.1, "Psych L7 PhysDef", 4, "buffPhysDef"), StatChangeScalingEffect("magiAtk", ["magiDef"], 0.1, "Psych L7 MagiDef", 4, "buffMagiDef")]),
     "Psychology Skill L10":Spell("Psychology Skill L10", ["Psychology Skill L10", "Increases an ally's crit chance", "Press the shown directions in time!"], "1ally", actionCommandList["4 Directions in a Row"],[]), # UNFINISHED
@@ -1031,4 +1034,12 @@ spellList = {
     "Languages Skill L13":Spell("Languages Skill L13", ["Languages Skill L13", "Attacks, with a chance to find an item", "Press Z!"], "1enemy", actionCommandList["Press Z Fast"],[]), # UNFINISHED
     "Languages Skill L16":Spell("Languages Skill L16", ["Languages Skill L16", "Activates end-of-turn effects", "on one enemy 3 times", "No Action Command"], "1enemy", actionCommandList["None"],[ActivateEffects() for x in range(3)]), # UNFINISHED
     "Languages Skill L19":Spell("Languages Skill L19", ["Languages Skill L19", "Removes status effects,", "dealing damage relative to amount", "Up-Up-Down-Down-","-Left-Right-Left-Right-","-X-C-Z!"], "1enemy", actionCommandList["Konami Code"],[]), # UNFINISHED
+
+    "English Skill L1":Spell("English Skill L1", ["English Skill L1", "Magic attack, hits 1 enemy", "Press the shown button!"], "1enemy", actionCommandList["Hidden Button Press"], [DamageEffect(2.5, "magiAtk", "magiDef")]),
+    "English Skill L4":Spell("English Skill L4", ["English Skill L4", "Lowers an enemy's physical and magic attack", "Press the shown directions in order!"], "1enemy", actionCommandList["Lenient 5 Directions"],[StatChangeScalingEffect("magiAtk", ["physAtk"], -0.1, "English L1 PhysAtk", 4, "debuffPhysAtk"), StatChangeScalingEffect("magiAtk", ["magiAtk"], -0.1, "English L1 MagiAtk", 4, "debuffMagiAtk")]),
+    # Triple Hit
+    # Revive
+    "English Skill L13":Spell("English Skill L13", ["English Skill L13", "Put one enemy to sleep", "No Action Command"], "1enemy", actionCommandList["None"],[]), # UNFINISHED
+    "English Skill L16":Spell("English Skill L16", ["English Skill L16", "Creates a ward over the party", "that absorbs damage until destroyed", "Hold C, then release!"], "allallies", actionCommandList["Hold C Fast"],[]), # UNFINISHED
+    "English Skill L19":Spell("English Skill L19", ["English Skill L19", "Powerful magic attack, hits all enemies", "Press the shown buttons in sequence!"], "allenemies", actionCommandList["Difficult 12 Buttons/Directions"],[DamageEffect(5, "magiAtk", "magiDef")]),
 }

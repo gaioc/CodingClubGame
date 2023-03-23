@@ -7,7 +7,7 @@ Opening Scene
 \LoadMap assemblyArea 13 14||6
 ???:Watch out!||7
 \Battle Tutorial1||8
-[Choose Class Here]||9
+\ClassChoice||9
 ???:Wow, you're pretty strong!||10
 ???:There's still one more. How about I teach you how to use that new skill of yours?||11
 \Battle Tutorial2||12

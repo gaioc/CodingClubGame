@@ -24,10 +24,13 @@ with open("stats/equipment.txt") as equipData:
 with open("stats/classStats.txt") as classData:
     classDict = stats.readClassStats(classData.read())
 
-lux = pStats.Character("Lux", "None", pStats.PlayerEquip(), pStats.PlayerBaseStats(20, classDict["none"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
-lux2 = pStats.Character("Lux 2", "Psychology", pStats.PlayerEquip(), pStats.PlayerBaseStats(20, classDict["psychology"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
-lux3 = pStats.Character("Lux 3", "Math", pStats.PlayerEquip(), pStats.PlayerBaseStats(20, classDict["math"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+lux = pStats.Character("Lux", "None", pStats.PlayerEquip(), pStats.PlayerBaseStats(0, classDict["none"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+#lux2 = pStats.Character("Lux 2", "Psychology", pStats.PlayerEquip(), pStats.PlayerBaseStats(1, classDict["psychology"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+#lux3 = pStats.Character("Lux 3", "Math", pStats.PlayerEquip(), pStats.PlayerBaseStats(1, classDict["math"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
 
+lux.skillPoints = 1
+#lux2.skillPoints = 1
+#lux3.skillPoints = 1
 
 
 world = esper.World()
@@ -81,11 +84,11 @@ with open("mapScreen/maps/openingArea.txt") as mapRaw:
     world.create_entity(mapDict)
 
 testMap = world.create_entity(mapDict["openingArea"])
-######world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
+world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
 
 
 
-playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux,lux2,lux3], battle.SharedStats(40, 50, 0, 0)))
+playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux], battle.SharedStats(4, 12, 0, 0)))
 
 with open("battle/battles.txt") as battleData:
     battleDict = world.create_entity(battle.readBattleData(battleData.read(), battle.enemies))
@@ -93,22 +96,20 @@ with open("battle/battles.txt") as battleData:
 # Player on map
 player = world.create_entity(mapScreen.Position(32,32), 
                              mapScreen.SpriteRenderer(pg.image.load("assets/art/maps/sprites/player.png").convert_alpha()),
-                            mapScreen.PlayerMove(8))
+                            mapScreen.PlayerMove(8, world))
 
-testMenu = menu.PauseMenu()
-testMenu.Activate()
 # Processors
 world.add_processor(mapScreen.InputProcessor(), priority=15)
 world.add_processor(mapScreen.PlayerProcessor(), priority=10)
-#world.add_processor(mapScreen.GraphicsProcessor(), priority=5)
-world.add_processor(battle.BattleProcessor(), priority=1)
+world.add_processor(mapScreen.GraphicsProcessor(), priority=5)
+world.add_processor(battle.BattleProcessor(), priority=2)
+world.add_processor(menu.MenuProcessor(), priority=1)
 world.add_processor(dialog.DialogProcessor(), priority=0)
 
 
 i = 0
 while 1:
     world.process()
-    testMenu.Update(world.component_for_entity(consts, mapScreen.Consts).screen, world, world.component_for_entity(inputs, mapScreen.Input).buttons)
     pg.display.flip()
     clock.tick(30)
     if i > int(clock.get_fps()):

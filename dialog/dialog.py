@@ -8,6 +8,7 @@ import pathlib
 import battle.battle as battle
 from mapScreen.mapScreen import Input, PlayerMove, loadMap, NPCHolder, MapHolder, TileArrayComponent, Position
 import audio.audio as audio
+import menu.menu as menu
 from textwrap import wrap
 
 #PYGAME DEPENDENCIES
@@ -240,6 +241,26 @@ class DialogBattle(DialogInstance):
                 return self.next
         return -1
         
+class DialogClassChoice(DialogInstance):
+    """
+    Brings up the class selection screen.
+    """
+    def __init__(self, next):
+        self.next = next
+        self.menu = menu.ClassMenu()
+        self.active = False
+        self.state = 0
+    def Activate(self):
+        self.active = True
+    def Update(self, screen, inputs, textSpeed, playerData, world):
+        if self.state == 0:
+            self.menuId = world.create_entity(self.menu)
+            self.menu.Activate()
+            self.state = 1
+        else:
+            if not(self.menu.active):
+                return self.next
+        return -1
 
 class DialogText(DialogInstance):
     """                                                                                    
@@ -664,6 +685,8 @@ def readDialogFile(dialogFileContents):
                     finalContents.append(DialogWait(functionWithArgs[1],int(parts[2])))
                 elif function == "\Battle":
                     finalContents.append(DialogBattle(functionWithArgs[1],int(parts[2])))
+                elif function == "\ClassChoice":
+                    finalContents.append(DialogClassChoice(int(parts[2])))
                 elif function == "\Empty":
                     finalContents.append(DialogInstance())
                 else:

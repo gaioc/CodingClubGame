@@ -2,8 +2,10 @@ import pygame as pg
 from textwrap import wrap
 import dialog.dialog as dialog
 import stats.stats as stats
+import mapScreen.mapScreen as mapScreen
 import math
 import copy
+import esper
 
 def printScr(text: str, posx: float, posy: float, colour: pg.Color, font: pg.font.Font, screen: pg.Surface):
     """
@@ -42,6 +44,14 @@ def drawVerticalBar(screen, left, top, length, height, color, value, max):
     pg.draw.rect(screen, (0,0,0), pg.Rect(left, top, length, height))
     pg.draw.rect(screen, color, pg.Rect(left, top, length, height*value/max))
 
+class MenuProcessor(esper.Processor):
+    def process(self):
+        inputs = self.world.get_component(mapScreen.Input)[0][1].buttons
+        screen = self.world.get_component(mapScreen.Consts)[0][1].screen
+        for i, menu in self.world.get_component(Menu):
+            if menu.active:
+                menu.Update(screen, self.world, inputs)
+
 class Menu:
     def __init__(self, items, options, start):
         """
@@ -49,12 +59,27 @@ class Menu:
         """
         self.items = items
         self.options = options
+        self.start = start
         self.current = start
         self.active = False
+        self.holdingMenu = True
+        self.closable = False
     def Activate(self):
         self.active = True
-        self.options[self.current].Activate
+        self.options[self.current].Activate()
+        self.holdingMenu = True
+    def Deactivate(self):
+        self.current = self.start
+        self.active = False
+        self.holdingMenu = True
     def Update(self, screen, world, inputs):
+        if not(self.holdingMenu) and inputs["menu"] and self.closable:
+            self.Deactivate()
+            world.get_component(mapScreen.PlayerMove)[0][1].Sync()
+            return -1
+        if not(inputs["menu"]):
+            self.holdingMenu = False
+        
         for item in self.items.values():
             if item.visible:
                 item.draw(screen, world)
@@ -64,7 +89,7 @@ class Menu:
         if result == -1:
             return -1
         elif result == -2:
-            self.active = False
+            self.Deactivate()
         else:
             print(result)
             self.options[self.current].Deactivate()
@@ -72,7 +97,26 @@ class Menu:
             self.options[self.current].Activate()
             return -1
 
-def PauseMenu():
+def ClassMenu():
+    classMenu = Menu(
+        {
+            "Background Layer 0":BackgroundMenu(True),
+            "ClassChoices":ClassChoiceMenu(True,0),
+        },
+        {
+            "ClassOptions":MenuOptionsHandler(["english", "science", "math", "art", "history", "psychology", "languages"], True,
+                                             8,88,0,45)
+        },
+        "ClassOptions"
+    )
+
+    for className in ["english", "science", "math", "art", "history", "psychology", "languages"]:
+        classMenu.options[className] = ClassChoiceHandler(className,0,-2)
+    
+    return classMenu
+
+def PauseMenu(world):
+    characters = world.get_component(dialog.PlayerData)[0][1].characters
     pauseMenu = Menu(
     {
         "Background Layer 0":BackgroundMenu(True),
@@ -89,30 +133,34 @@ def PauseMenu():
     {
         "OptionsSidebar":MenuOptionsHandler(["Stats","Equipment","Inventory","Spells","Order","Quit"],"OptionsSidebar",
                                                 448,22,0,48),
-        "Stats":MenuOptionsHandler(["Stats0","Stats1","Stats2"],"OptionsSidebar",
+        "Stats":MenuOptionsHandler([f"Stats{i}" for i in range(len(characters))],"OptionsSidebar",
                                        8,72,0,144),
-        "Equipment":MenuOptionsHandler(["Equipment0","Equipment1","Equipment2"],"OptionsSidebar",
+        "Equipment":MenuOptionsHandler([f"Equipment{i}" for i in range(len(characters))],"OptionsSidebar",
                                        8,72,0,144),
         "Inventory":MenuOptionsHandler([],"OptionsSidebar",
                                        8,72,0,144),
-        "Spells":MenuOptionsHandler(["Spells0","Spells1","Spells2"],"OptionsSidebar",
+        "Spells":MenuOptionsHandler([f"Spells{i}" for i in range(len(characters))],"OptionsSidebar",
                                        8,72,0,144),
-        "Order":MenuOptionsHandler(["Order0","Order1","Order2"],"OptionsSidebar",
+        "Order":MenuOptionsHandler([f"Order{i}" for i in range(len(characters))],"OptionsSidebar",
                                        8,72,0,144)
     },
     "OptionsSidebar"
     )
-
+    pauseMenu.closable = True
     for i in range(3):
-        pauseMenu.options[f"Order{i}"] = MenuOptionsHandler([f"Order{i}|0",f"Order{i}|1",f"Order{i}|2"],"Order",
+        pauseMenu.options[f"Order{i}"] = MenuOptionsHandler([f"Order{i}|{j}" for j in range(len(characters))],"Order",
                                        8,72,0,144)
-        for j in range(3):
+        for j in range(len(characters)):
             pauseMenu.options[f"Order{i}|{j}"] = MenuSwapHandler(i,j,"OptionsSidebar")
 
     for i in range(3):
         pauseMenu.options[f"Stats{i}"] = MenuChangerHandler({"Background Layer 1":True,f"Stats {i}":True},pauseMenu,f"EV{i}")
-        pauseMenu.options[f"EV{i}"] = MenuOptionsHandler([],f"StatsBack{i}",0,0,0,0)
+        pauseMenu.options[f"EV{i}"] = MenuOptionsHandler([f"EVmaxHP{i}",f"EVphysAtk{i}",f"EVmagiAtk{i}",f"EVphysDef{i}",f"EVmagiDef{i}"],f"StatsBack{i}",
+                                                         0,212,0,48)
         pauseMenu.options[f"StatsBack{i}"] = MenuChangerHandler({"Background Layer 1":False,f"Stats {i}":False},pauseMenu,"OptionsSidebar")
+        for stat in ["maxHP","physAtk","physDef","magiAtk","magiDef"]:
+            pauseMenu.options[f"EV{stat}{i}"] = MenuEVBoostHandler(stat, i, f"EV{i}", f"EV{i}")
+
     
     return pauseMenu
 
@@ -130,6 +178,64 @@ class MenuHandler:
         self.active = False
     def draw(self, screen):
         pass
+
+class ClassChoiceHandler(MenuHandler):
+    """
+    Handles choosing/changing class.
+    """
+    def __init__(self, className, id, next):
+        self.className = className
+        self.id = id
+        self.next = next
+    def Activate(self):
+        self.active = True
+    def Deactivate(self):
+        self.active = False
+    def draw(self, screen):
+        pass
+    def Update(self, screen, world, inputs):
+        character = world.get_component(dialog.PlayerData)[0][1].characters[self.id]
+        with open("stats/classStats.txt") as classData:
+            classDict = stats.readClassStats(classData.read())
+        character.baseStats.ivs = classDict[self.className]
+        character.className = self.className.title()
+        character.baseStats.calculate()
+        character.calculate()
+        character.hp = min(character.hp, character.baseStats.finalStats["maxHP"])
+        spellsPerClass = {
+            "art":["Art Skill L1", "Art Skill L4", "Art Skill L7", "Art Skill L10", "Revive", "Art Skill L16", "Art Skill L19"],
+            "science":["Science Skill L1", "Science Skill L4", "Science Skill L7", "Science Skill L10", "Science Skill L13", "Science Skill L16", "Science Skill L19"],
+            "math":["Math Skill L1", "Math Skill L4", "Math Skill L7", "Math Skill L10", "Math Skill L13", "Math Skill L16", "Math Skill L19"],
+            "psychology":["Psychology Skill L1", "Psychology Skill L4", "Psychology Skill L7", "Psychology Skill L10", "Psychology Skill L13", "Psychology Skill L16", "Psychology Skill L19"],
+            "history":["History Skill L1", "History Skill L4", "History Skill L7", "Revive", "History Skill L13", "History Skill L16", "History Skill L19"],
+            "english":["English Skill L1", "English Skill L4", "English Skill L7", "Triple Hit", "Revive", "English Skill L16", "English Skill L19"],
+            "languages":["Languages Skill L1", "Languages Skill L4", "Languages Skill L7", "Languages Skill L10", "Languages Skill L13", "Languages Skill L16", "Languages Skill L19"],
+        }
+        character.spellNames = [spellsPerClass[self.className][0]]
+        return self.next
+
+class MenuEVBoostHandler(MenuHandler):
+    """
+    Handles boosting an EV.
+    """
+    def __init__(self, stat, id, next, previous):
+        self.stat = stat
+        self.id = id
+        self.next = next
+        self.previous = previous
+    def Activate(self):
+        self.active = True
+    def Deactivate(self):
+        self.active = False
+    def draw(self, screen):
+        pass
+    def Update(self, screen, world, inputs):
+        character = world.get_component(dialog.PlayerData)[0][1].characters[self.id]
+        if character.skillPoints > 0 and character.baseStats.evs[self.stat] < 8:
+            character.baseStats.setEv(self.stat, character.baseStats.evs[self.stat]+1)
+            character.skillPoints -= 1
+            character.calculate()
+        return self.next
 
 class MenuChangerHandler(MenuHandler):
     """
@@ -315,10 +421,13 @@ class StatsMenu(MenuItem):
             printScr(f"MAX LEVEL", self.posx+148, self.posy+76, (255,255,255), self.font, screen)
         #  Class
         printScr(f"Class: {className:10}", self.posx+148, self.posy+96, (255,255,255), self.font, screen)
-        printScr(f"Unspent Skill Points: {skillPoints:2}", self.posx+148, self.posy+116, (255,255,255), self.font, screen)
+        printScr(f"Spend Skill Points: {skillPoints:2} left", self.posx+148, self.posy+116, (255,255,255), self.font, screen)
 
+        printScr("Stats without equipment:", self.posx, self.posy+164, (255,255,255), self.font, screen)
+
+        
         for i, skillName in enumerate(["maxHP", "physAtk", "magiAtk", "physDef", "magiDef"]):
-            printScr(f"{skillName:8}:{character.baseStats.finalStats[skillName]:4} ({character.baseStats.evs[skillName]:1}/8 EVs)", self.posx, self.posy+144+i*24, (255,255,255), self.font, screen)
+            printScr(f"{skillName:8}:{character.baseStats.finalStats[skillName]:4} ({character.baseStats.evs[skillName]:1}/8 EVs)", self.posx, self.posy+196+i*48, (255,255,255), self.font, screen)
 
         shortNames = {"maxHP":"HP","physAtk":"PA","physDef":"PD","magiAtk":"MA","magiDef":"MD"}
         
@@ -336,6 +445,35 @@ class StatsMenu(MenuItem):
             printScr(shortNames[skillName], math.cos(math.pi*i*2/5-math.pi/2)*165+448, math.sin(math.pi*i*2/5-math.pi/2)*165+320, (255,255,255), self.font, screen)
         pg.draw.polygon(screen, (100,100,255), finalPoly)
 
+class ClassChoiceMenu(MenuItem):
+    def __init__(self, visible, index):
+        self.visible = visible
+        self.index = index
+        self.font = pg.font.SysFont("Courier", 16)
+        self.images = dict()
+        for i, className in enumerate(["english", "science", "math", "art", "history", "psychology", "languages"]):
+            self.images[className] = pg.image.load(f"assets/art/ui/menus/icon_{className}.png").convert_alpha()
+
+        self.descriptions = {
+            "english":"Well-rounded class with a wide variety of skills.",
+            "science":"Heavy hitter with strong offensive skills, but has poor survivability.",
+            "math":"Defensive class with a focus on protection and redirection.",
+            "art":"Physically weak, but can summon a creature to fight for it.",
+            "history":"Defensive class with a focus on healing self and allies.",
+            "psychology":"Supportive class that has many buffing and debuffing abilities.",
+            "languages":"Heavy physical hitter with a variety of complex skills."
+        }
+        
+    def draw(self, screen, world):
+        printScr("CHOOSE CLASS", 16, 16, (255,255,255), self.font, screen)
+        for i, className in enumerate(["english", "science", "math", "art", "history", "psychology", "languages"]):
+            rect = self.images[className].get_rect()
+            rect.left = 16 + 45*(i%2)
+            rect.top = 56 + 45*i
+            screen.blit(self.images[className], rect)
+            printWrapped(f"{className.title():10}:", 48, 20, 144, 80+i*45, (255,255,255), self.font, screen)
+            printWrapped(f"{self.descriptions[className]}", 36, 20, 256, 80+i*45, (255,255,255), self.font, screen)
+            
 
 class PortraitMenu(MenuItem):
     def __init__(self, posx, posy, visible, index):

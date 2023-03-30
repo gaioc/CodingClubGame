@@ -35,7 +35,7 @@ gggggggggggggggggggggggg<>gggggggggggggggggggggg
 gggggggggggggggggggggggg<>gggggggggggggggggggggg
 ggggggggggggggggggggggggFFgggggggggggggggggggggg
 
-28|28|Teacher|npc.png
+28|28|Dummy Builder|npc.png
 
 24|30|Opening Scene
 25|30|Opening Scene

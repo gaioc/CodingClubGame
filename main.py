@@ -28,9 +28,6 @@ lux = pStats.Character("Lux", "None", pStats.PlayerEquip(), pStats.PlayerBaseSta
 #lux2 = pStats.Character("Lux 2", "Psychology", pStats.PlayerEquip(), pStats.PlayerBaseStats(1, classDict["psychology"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
 #lux3 = pStats.Character("Lux 3", "Math", pStats.PlayerEquip(), pStats.PlayerBaseStats(1, classDict["math"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
 
-lux.skillPoints = 1
-#lux2.skillPoints = 1
-#lux3.skillPoints = 1
 
 
 world = esper.World()

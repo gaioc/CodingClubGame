@@ -10,6 +10,16 @@ Tutorial2
 False
 background1
 Battle!
-0
+1000
 10
 Tutorial Blob
+
+Dummies
+True
+background1
+Battle!
+6000000000
+10
+Dummy
+Dummy
+Dummy

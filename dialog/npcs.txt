@@ -14,6 +14,10 @@ Auto(): Panicked Student 2
 Panicked Student 3
 Auto(): Panicked Student 3
 
+Dummy Builder
+FirstInteraction(): Dummy Builder First
+Auto(): Dummy Builder
+
 Bobby
 FirstInteraction(): Fix Healing Place - First
 QuestStatus(FixHealingPlace, -1): Fix Healing Place

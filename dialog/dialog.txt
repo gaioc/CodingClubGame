@@ -37,6 +37,22 @@ What are we going to do now?||-2
 Panicked Student 3
 What was that thing?!||-2
 
+Dummy Builder First
+Hello! My name is [], and I build and train dummies.||1
+They're mechanical creations that most use to help train.||2
+So... want to train against some dummies?|Yes,No|3,6
+Great! Just remember: if you can't keep going, run and I'll call them off.||4
+\Battle Dummies||5
+Good fight!||-2
+Ok then.||-2
+
+Dummy Builder
+Hello! Want to train against some dummies?|Yes,No|1,4
+Great! Just remember: if you can't keep going, run and I'll call them off.||2
+\Battle Dummies||3
+Good fight!||-2
+Ok then.||-2
+
 Healing Place Interaction
 Bobby:Hello!||1
 Bobby:Welcome to the healing place!||2

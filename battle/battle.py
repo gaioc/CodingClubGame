@@ -463,8 +463,8 @@ class VictoryHandler:
             "math":["Math Skill L1", "Math Skill L4", "Math Skill L7", "Math Skill L10", "Math Skill L13", "Math Skill L16", "Math Skill L19"],
             "psychology":["Psychology Skill L1", "Psychology Skill L4", "Psychology Skill L7", "Psychology Skill L10", "Psychology Skill L13", "Psychology Skill L16", "Psychology Skill L19"],
             "history":["History Skill L1", "History Skill L4", "History Skill L7", "Revive", "History Skill L13", "History Skill L16", "History Skill L19"],
-            "english":["English Skill L1", "English Skill L4", "English Skill L7", "Triple Hit", "Revive", "English Skill L16", "English Skill L19"],
-            "languages":["Languages Skill L1", "Languages Skill L4", "Languages Skill L7", "Languages Skill L10", "Languages Skill L13", "Languages Skill L16", "Languages Skill L19"],
+            "english":["English Skill L1", "English Skill L4", "Triple Hit", "Revive", "English Skill L13", "English Skill L16", "English Skill 19"],
+            "languages":["Languages Skill L1", "Languages Skill L4", "Triple Hit", "Languages Skill L10", "Languages Skill L13", "Languages Skill L16", "Languages Skill L19"],
         }
         
         self.allCharacters = allCharacters
@@ -486,6 +486,7 @@ class VictoryHandler:
             sharedStats.xp -= xpPerLevelUp[self.allCharacters[0].character.baseStats.level]
             for battleCharacter in self.allCharacters:
                 character = battleCharacter.character
+                character.skillPoints += 1
                 oldBase = copy.deepcopy(character.baseStats.finalStats)
                 character.baseStats.setLevel(character.baseStats.level + 1)
                 self.menuList.append(DescriptionConfirmAction([f"{character.name} grew to level {character.baseStats.level}!"] + [f"{statName.upper():8}: {oldBase[statName]:6} + {(character.baseStats.finalStats[statName] - oldBase[statName]):3} = {character.baseStats.finalStats[statName]:5}" for statName in ["maxHP", "physAtk", "physDef", "magiAtk", "magiDef"]],1, -1))
@@ -495,6 +496,7 @@ class VictoryHandler:
         for character in self.allCharacters:
             character.updateCharacter(character.character)
             character.character.calculate()
+            
         #world.get_component(dialog.PlayerData)[0][1].characters = [character.character for character in self.allCharacters]
         #print(world.get_component(dialog.PlayerData)[0][1].characters[0].baseStats)
         world.get_component(dialog.PlayerData)[0][1].sharedStats = sharedStats
@@ -524,6 +526,10 @@ class BattleHolder:
     def toHandler(self, players, sharedPlayerStats):
         print(self.enemies)
         battlePlayers = [BattleEntity(None, None, None, None).fromCharacter(i) for i in players]
+        for enemy in self.enemies:
+            enemy.hp = enemy.stats["maxHP"]
+            enemy.statusEffects = []
+            enemy.statModifiers = {"maxHP":[],"physAtk":[],"physDef":[],"magiAtk":[],"magiDef":[]}
         return BattleHandler(battlePlayers, self.enemies, sharedPlayerStats, self.background, self.xp, self.gold, escapable=self.escapable, music=self.music)
 
 class BattleHandler:
@@ -696,7 +702,7 @@ class BattleHandler:
             
             if result == -3:
                 # Run away
-                return self.Deactivate()
+                return self.Deactivate(world)
             elif result == -2:
                 # Activate end-of-my-turn status effects
                 for effect in self.players[self.subturn].statusEffects:
@@ -935,16 +941,20 @@ def readBattleData(data, enemyData):
 
 
 guardCommands = {
+    "None":act.ActionCommand(),
     "normalGuard":act.pressButtonCommand(["z"], 30, 3, True, False),
     "sequenceGuard":act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 60, True)
 }
 enemyAttacks = {
     "enemyAttack":Spell("Attack", ["Normal Attack"], "1enemy", guardCommands["normalGuard"], [DamageEffect(1, "physAtk", "physDef")]),
+    "dummyBuff":Spell("Dummy Up", ["Buffs all allies"], "allallies", guardCommands["None"], [StatChangeScalingEffect("magiAtk", ["physDef"], 0.1, "Dummy PhysDef", 4, "buffPhysDef"), StatChangeScalingEffect("magiAtk", ["magiDef"], 0.1, "Dummy MagiDef", 4, "buffMagiDef")]),
+    "dummyAoE":Spell("Boiler Room", ["AoE magic damage"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(1, "magiAtk", "magiDef")]),
     "boneSpray":Spell("Bone Spray", ["Shoots bones"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(1, "magiAtk", "magiDef")])
 }
 
 enemies = {
     "Tutorial Blob":BattleEnemy("Dark Blob", {"maxHP":10,"physAtk":5,"physDef":5,"magiAtk":5,"magiDef":5}, 10, [enemyAttacks["enemyAttack"]], pg.image.load("assets/art/battle/enemies/darkBlob.png").convert_alpha(),EnemyAI()),
+    "Dummy":BattleEnemy("Dummy", {"maxHP":15,"physAtk":6,"magiAtk":6,"physDef":10,"magiDef":10},15,[enemyAttacks["enemyAttack"]]*3+[enemyAttacks["dummyBuff"],enemyAttacks["dummyAoE"]],pg.image.load("assets/art/battle/enemies/dummy.png").convert_alpha(),EnemyAI()),
     "Testing Skeleton":BattleEnemy("Skeleton", {"maxHP":50000,"physAtk":10,"physDef":10,"magiAtk":10,"magiDef":10}, 50000, [enemyAttacks["enemyAttack"],enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),EnemyAI()),
 }
 

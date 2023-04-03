@@ -232,6 +232,8 @@ class PlayerMove:
         
         if buttons["menu"] and not(self.holdingMenu):
             print("PAUSE")
+            world.delete_entity(self.pauseMenu) # Refresh and re-create menu
+            self.pauseMenu = world.create_entity(menu.PauseMenu(world))
             world.component_for_entity(self.pauseMenu, menu.Menu).Activate()
             return 0
 

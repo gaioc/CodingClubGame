@@ -63,8 +63,11 @@ def damageCalc(attack, defense, baseDamage):
     """
     return max(1, int((attack**2 * baseDamage) / (attack + defense)))
 
+class ClassStats(dict):
+    pass
+
 def readClassStats(statsString):
-    finalStats = dict()
+    finalStats = ClassStats()
     classes = statsString.split("\n\n")
     for classData in classes:
         lines = classData.split("\n")

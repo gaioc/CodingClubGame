@@ -9,6 +9,8 @@ import battle.battle as battle
 from mapScreen.mapScreen import Input, PlayerMove, loadMap, NPCHolder, MapHolder, TileArrayComponent, Position
 import audio.audio as audio
 import menu.menu as menu
+import stats.playerStats as pStats
+import stats.stats as stats
 from textwrap import wrap
 
 #PYGAME DEPENDENCIES
@@ -262,6 +264,37 @@ class DialogClassChoice(DialogInstance):
                 return self.next
         return -1
 
+class DialogJoinParty(DialogInstance):
+    """
+    Adds character with given name and class to the party.
+    """
+    def __init__(self, name, className, next):
+        self.name = name
+        self.className = className
+        self.next = next
+        self.active = False
+    def Activate(self):
+        self.active = True
+    def Update(self, screen, inputs, textSpeeed, playerData, world):
+        classDict = world.get_component(stats.ClassStats)[0][1]
+        tempChar = pStats.Character(self.name, self.className.title(), pStats.PlayerEquip(), pStats.PlayerBaseStats(playerData.characters[0].baseStats.level, classDict[self.className], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
+        tempChar.skillPoints = tempChar.baseStats.level
+        spellsPerClass = {
+            "art":["Art Skill L1", "Art Skill L4", "Art Skill L7", "Art Skill L10", "Revive", "Art Skill L16", "Art Skill L19"],
+            "science":["Science Skill L1", "Science Skill L4", "Science Skill L7", "Science Skill L10", "Science Skill L13", "Science Skill L16", "Science Skill L19"],
+            "math":["Math Skill L1", "Math Skill L4", "Math Skill L7", "Math Skill L10", "Math Skill L13", "Math Skill L16", "Math Skill L19"],
+            "psychology":["Psychology Skill L1", "Psychology Skill L4", "Psychology Skill L7", "Psychology Skill L10", "Psychology Skill L13", "Psychology Skill L16", "Psychology Skill L19"],
+            "history":["History Skill L1", "History Skill L4", "History Skill L7", "Revive", "History Skill L13", "History Skill L16", "History Skill L19"],
+            "english":["English Skill L1", "English Skill L4", "English Skill L7", "Triple Hit", "Revive", "English Skill L16", "English Skill L19"],
+            "languages":["Languages Skill L1", "Languages Skill L4", "Triple Hit", "Languages Skill L10", "Languages Skill L13", "Languages Skill L16", "Languages Skill L19"],
+        }
+        count = 0
+        for i in range(1, tempChar.baseStats.level+3, 3):
+            tempChar.spellNames.append(spellsPerClass[self.className.lower()][count])
+            count += 1
+        playerData.characters.append(tempChar)
+        return self.next
+
 class DialogText(DialogInstance):
     """                                                                                    
     One "segment" of dialogue. Used internally by the Dialog component.
@@ -431,12 +464,13 @@ class PlayerData:
     and all data that needs to be saved.
     (progression, interacted NPCs, inventory, and all the characters)
     """
-    def __init__(self, inventory, questList, npcsInteractedWith, characters, sharedStats):
+    def __init__(self, inventory, questList, npcsInteractedWith, characters, sharedStats, mainClass):
         self.inventory = inventory
         self.questList = questList
         self.npcsInteractedWith = npcsInteractedWith
-        self.characters = characters # First 1 is Lux, next 2 are on party, rest are off
+        self.characters = characters # First 3 are on party, rest are off
         self.sharedStats = sharedStats
+        self.mainClass = mainClass # Class picked at the start. Defaults to "none"
 
 class Condition:
     """
@@ -506,7 +540,10 @@ class PlayerClassCondition(Condition):
     def __init__(self, className):
         self.className = className
     def verify(self, name, playerData):
-        return self.className == playerData.characters[0].playerClass
+        """
+        Returns true if class matches initial choice.
+        """
+        return self.className == playerData.mainClass
 class FirstInteractionCondition(Condition):
     def __init__(self):
         pass
@@ -588,6 +625,7 @@ def parseCondition(conditionStr):
     elif funcName == "HasItem":
         return InventoryCondition(args)
     elif funcName == "PlayerClass":
+        argList = args.split(", ")
         return PlayerClassCondition(argList[0])
     elif funcName == "Auto":
         return Condition()
@@ -687,10 +725,12 @@ def readDialogFile(dialogFileContents):
                     finalContents.append(DialogBattle(functionWithArgs[1],int(parts[2])))
                 elif function == "\ClassChoice":
                     finalContents.append(DialogClassChoice(int(parts[2])))
+                elif function == "\JoinParty":
+                    finalContents.append(DialogJoinParty(functionWithArgs[1], functionWithArgs[2], int(parts[2])))
                 elif function == "\Empty":
                     finalContents.append(DialogInstance())
                 else:
-                    finalContents.append(DialogInstance())
+                    finalContents.append(DialogText(data, options, next))
             else:
                 finalContents.append(DialogText(data, options, next))
         dialogDict[name] = Dialog(finalContents)

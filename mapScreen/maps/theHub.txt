@@ -45,3 +45,5 @@ ggggggggggggggggggggggggFFgggggggggggggggggggggg
 25|0|assemblyArea|13|14
 24|31|openingArea|13|2
 25|31|openingArea|14|2
+0|11|lockerRoom|22|17
+0|12|lockerRoom|22|18

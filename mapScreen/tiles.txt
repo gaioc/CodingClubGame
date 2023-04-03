@@ -1,3 +1,7 @@
+ 
+empty.png
+False
+
 g
 grass.png
 True

@@ -22,6 +22,132 @@ Opening Scene
 Empty
 \Empty||-2
 
+English Same Class
+[Placeholder Text: You already chose this class]||-2
+
+Math Same Class
+[Placeholder Text: You already chose this class]||-2
+
+Science Same Class
+[Placeholder Text: You already chose this class]||-2
+
+History Same Class
+[Placeholder Text: You already chose this class]||-2
+
+Languages Same Class
+[Placeholder Text: You already chose this class]||-2
+
+Art Same Class
+[Placeholder Text: You already chose this class]||-2
+
+Psychology Same Class
+[Placeholder Text: You already chose this class]||-2
+
+English Already Joined
+[Placeholder Text: You already recruited this person]||-2
+
+Math Already Joined
+[Placeholder Text: You already recruited this person]||-2
+
+Science Already Joined
+[Placeholder Text: You already recruited this person]||-2
+
+History Already Joined
+[Placeholder Text: You already recruited this person]||-2
+
+Languages Already Joined
+[Placeholder Text: You already recruited this person]||-2
+
+Art Already Joined
+[Placeholder Text: You already recruited this person]||-2
+
+Psychology Already Joined
+[Placeholder Text: You already recruited this person]||-2
+
+Science Lost Item
+[Placeholder Text: You need to find their lost item]||-2
+
+History Lost Item
+[Placeholder Text: You need to find their lost item]||-2
+
+Languages Lost Item
+[Placeholder Text: You need to find their lost item]||-2
+
+Art Lost Item
+[Placeholder Text: You need to find their lost item]||-2
+
+Psychology Lost Item
+[Placeholder Text: You need to find their lost item]||-2
+
+English Joins Party
+[Placeholder Text: something like "sure, I'll join you!"]||1
+\GiveQuest EnglishJoined||2
+\BumpQuest EnglishJoined||3
+\JoinParty EnglishName english||4
+[Placeholder Text: English joined the party!]||5
+[Ability description]||-2
+
+Math Joins Party
+[Placeholder Text: something like "sure, I'll join you!"]||1
+\GiveQuest MathJoined||2
+\BumpQuest MathJoined||3
+\JoinParty MathName math||4
+[Placeholder Text: Math joined the party!]||5
+[Ability description]||-2
+
+Science Joins Party
+[Placeholder Text: something like "sure, I'll join you!"]||1
+\GiveQuest ScienceJoined||2
+\BumpQuest ScienceJoined||3
+\JoinParty ScienceName science||4
+[Placeholder Text: Science joined the party!]||5
+\TakeItem ScienceKeepsake||6
+[Ability description]||-2
+
+Science Special Case
+[Placeholder Text: something like "sure, I'll join you!"]||1
+\GiveQuest ScienceJoined||2
+\BumpQuest ScienceJoined||3
+\JoinParty ScienceName science||4
+[Placeholder Text: Science joined the party!]||5
+[Ability description]||-2
+
+History Joins Party
+[Placeholder Text: something like "sure, I'll join you!"]||1
+\GiveQuest HistoryJoined||2
+\BumpQuest HistoryJoined||3
+\JoinParty HistoryName history||4
+[Placeholder Text: History joined the party!]||5
+\TakeItem HistoryKeepsake||6
+[Ability description]||-2
+
+Languages Joins Party
+[Placeholder Text: something like "sure, I'll join you!"]||1
+\GiveQuest LanguagesJoined||2
+\BumpQuest LanguagesJoined||3
+\JoinParty LangName languages||4
+[Placeholder Text: Languages joined the party!]||5
+\TakeItem LanguagesKeepsake||6
+[Ability description]||-2
+
+Art Joins Party
+[Placeholder Text: something like "sure, I'll join you!"]||1
+\GiveQuest ArtJoined||2
+\BumpQuest ArtJoined||3
+\JoinParty ArtName art||4
+[Placeholder Text: Art joined the party!]||5
+\TakeItem ArtKeepsake||6
+[Ability description]||-2
+
+Psychology Joins Party
+[Placeholder Text: something like "sure, I'll join you!"]||1
+\GiveQuest PsychologyJoined||2
+\BumpQuest PsychologyJoined||3
+\JoinParty PsychName psychology||4
+[Placeholder Text: Psychology joined the party!]||5
+\TakeItem PsychologyKeepsake||6
+[Ability description]||-2
+
 Can't go in small room
 Looks like I can't go here yet...||1
 The devs haven't finished making this.||2

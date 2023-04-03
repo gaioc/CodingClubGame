@@ -197,12 +197,13 @@ class ClassChoiceHandler(MenuHandler):
     def draw(self, screen):
         pass
     def Update(self, screen, world, inputs):
-        character = world.get_component(dialog.PlayerData)[0][1].characters[self.id]
+        playerData = world.get_component(dialog.PlayerData)[0][1]
+        character = playerData.characters[self.id]
         with open("stats/classStats.txt") as classData:
             classDict = stats.readClassStats(classData.read())
         character.baseStats.ivs = classDict[self.className]
-        character.className = self.className.title()
-        character.playerClass = self.className.lower()
+        character.className = self.className.lower()
+        character.playerClass = self.className.title()
         character.baseStats.calculate()
         character.calculate()
         character.hp = min(character.hp, character.baseStats.finalStats["maxHP"])
@@ -216,6 +217,7 @@ class ClassChoiceHandler(MenuHandler):
             "languages":["Languages Skill L1", "Languages Skill L4", "Triple Hit", "Languages Skill L10", "Languages Skill L13", "Languages Skill L16", "Languages Skill L19"],
         }
         character.spellNames = [spellsPerClass[self.className][0]]
+        playerData.mainClass = self.className.lower()
         return self.next
 
 class MenuEVBoostHandler(MenuHandler):

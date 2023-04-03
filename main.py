@@ -19,10 +19,13 @@ pg.mixer.init()
 
 clock = pg.time.Clock()
 
+world = esper.World()
+
 with open("stats/equipment.txt") as equipData:
     equipDict, enchantDict = equip.loadEquipment(equipData.read())
 with open("stats/classStats.txt") as classData:
     classDict = stats.readClassStats(classData.read())
+    world.create_entity(classDict)
 
 lux = pStats.Character("Lux", "None", pStats.PlayerEquip(), pStats.PlayerBaseStats(0, classDict["none"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
 #lux2 = pStats.Character("Lux 2", "Psychology", pStats.PlayerEquip(), pStats.PlayerBaseStats(1, classDict["psychology"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
@@ -30,7 +33,7 @@ lux = pStats.Character("Lux", "None", pStats.PlayerEquip(), pStats.PlayerBaseSta
 
 
 
-world = esper.World()
+
 
 
 inputs = world.create_entity(mapScreen.Input({
@@ -85,7 +88,7 @@ world.component_for_entity(testMap,mapScreen.TileMap).Activate(world)
 
 
 
-playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux], battle.SharedStats(4, 12, 0, 0)))
+playerData = world.create_entity(dialog.PlayerData([], dict({"FixHealingPlace":-1}), [], [lux], battle.SharedStats(4, 12, 0, 0), "none"))
 
 with open("battle/battles.txt") as battleData:
     battleDict = world.create_entity(battle.readBattleData(battleData.read(), battle.enemies))

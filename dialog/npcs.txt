@@ -2,6 +2,47 @@ Opening Scene
 FirstInteraction(): Opening Scene
 Auto(): Empty
 
+English
+PlayerClass(english): English Same Class
+QuestStatus(EnglishJoined, 1): English Already Joined
+Auto(): English Joins Party
+
+Math
+PlayerClass(math): Math Same Class
+QuestStatus(MathJoined, 1): Math Already Joined
+Auto(): Math Joins Party
+
+Science
+PlayerClass(science): Science Same Class
+QuestStatus(ScienceJoined, 1): Science Already Joined
+Any(PlayerClass(math), PlayerClass(english)): Science Special Case
+HasItem(ScienceKeepsake): Science Joins Party
+Auto(): Science Lost Item
+
+History
+PlayerClass(history): History Same Class
+QuestStatus(HistoryJoined, 1): History Already Joined
+HasItem(HistoryKeepsake): History Joins Party
+Auto(): History Lost Item
+
+Languages
+PlayerClass(languages): Languages Same Class
+QuestStatus(LanguagesJoined, 1): Languages Already Joined
+HasItem(LanguagesKeepsake): Languages Joins Party
+Auto(): Languages Lost Item
+
+Art
+PlayerClass(art): Art Same Class
+QuestStatus(ArtJoined, 1): Art Already Joined
+HasItem(ArtKeepsake): Art Joins Party
+Auto(): Art Lost Item
+
+Psychology
+PlayerClass(psychology): Psychology Same Class
+QuestStatus(PsychologyJoined, 1): Psychology Already Joined
+HasItem(PsychologyKeepsake): Psychology Joins Party
+Auto(): Psychology Lost Item
+
 Can't go in small room
 Auto(): Can't go in small room
 

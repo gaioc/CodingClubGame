@@ -84,7 +84,8 @@ class TileMap:
     mapData : List[List[str]] = []
     tileMapping : TileArray
     active : bool = False
-    def __init__(self, size, backgroundMusic, data, mapping, npcs, cutscenes, loadingZones):
+    def __init__(self, name, size, backgroundMusic, data, mapping, npcs, cutscenes, loadingZones):
+        self.name = name
         self.mapSize = size
         self.backgroundMusic = backgroundMusic
         self.mapData = data
@@ -145,7 +146,7 @@ def loadMap(world, mapsDict, mapName, npcDict, tileMapping):
     else:
         # case 2: map is new, read and load it
         with open(f"mapScreen/maps/{mapName}.txt") as mapFile:
-            mapData = readMapData(mapFile.read(), tileMapping, npcDict)
+            mapData = readMapData(mapName, mapFile.read(), tileMapping, npcDict)
         mapsDict[mapName] = mapData
         currMap = mapsDict[mapName]
         world.create_entity(currMap)
@@ -347,7 +348,7 @@ def readTileData(dataStr, consts):
         outTiles.tileData[lines[0]] = Tile(pg.image.load(f"assets/art/maps/tiles/{lines[1]}").convert(), (lines[2] == "True"), consts)
     return outTiles
 
-def readMapData(dataStr, tileMapping, npcDict):
+def readMapData(name, dataStr, tileMapping, npcDict):
     """Read in a file containing map data, as will be specified in mapsFormat.md.
     Requires tile mapping data, as a TileArray.
     Returns a TileMap."""
@@ -382,7 +383,7 @@ def readMapData(dataStr, tileMapping, npcDict):
         endX, endY = loadingZone.split("|")[3:]
         finalZones.append((Position(int(startX)*32, int(startY)*32), destination, Position(int(endX)*32, int(endY)*32)))
     
-    return TileMap(sizeTuple, backgroundMusic, mapDataArray, tileMapping, npcs, cutscenes, finalZones)
+    return TileMap(name, sizeTuple, backgroundMusic, mapDataArray, tileMapping, npcs, cutscenes, finalZones)
     
     
 

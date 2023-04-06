@@ -52,6 +52,10 @@ class SaveData:
         with open("mapScreen/tiles.txt") as tileRaw:
             tileMapping = mapScreen.readTileData(tileRaw.read(), world.component_for_entity(consts, mapScreen.Consts))
         world.create_entity(mapScreen.TileArrayComponent(tileMapping))
+
+        with open("stats/classStats.txt") as classData:
+            classDict = stats.readClassStats(classData.read())
+            world.create_entity(classDict)
         
         #Configure Options
         world.create_entity(dialog.Options(world.component_for_entity(consts,mapScreen.Consts).screen, 1))
@@ -68,7 +72,7 @@ class SaveData:
                 
         with open(f"mapScreen/maps/{self.mapName}.txt") as mapRaw:
             # You can try changing testMap.txt to see the effect on the result!
-            mapDict = mapScreen.MapHolder({self.mapName:mapScreen.readMapData(mapRaw.read(), tileMapping, npcDict)})
+            mapDict = mapScreen.MapHolder({self.mapName:mapScreen.readMapData(self.mapName, mapRaw.read(), tileMapping, npcDict)})
             world.create_entity(mapDict)
         
         testMap = world.create_entity(mapDict[self.mapName])
@@ -108,3 +112,9 @@ class SaveData:
         mainChar = pStats.Character("Lux", "None", pStats.PlayerEquip(), pStats.PlayerBaseStats(0, classDict["none"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
 
         return SaveData("openingArea", 2, 2, dialog.PlayerData([], dict(), [], [mainChar], battle.SharedStats(4, 12, 0, 0), "none")).startWorld(world)
+
+    def fromWorld(world):
+        """
+        Creates a SaveData object from the game world.
+        """
+        return SaveData()

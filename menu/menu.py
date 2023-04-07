@@ -6,6 +6,8 @@ import mapScreen.mapScreen as mapScreen
 import math
 import copy
 import esper
+import online.readWrite as serverRW
+import save.save as save
 
 def printScr(text: str, posx: float, posy: float, colour: pg.Color, font: pg.font.Font, screen: pg.Surface):
     """
@@ -118,6 +120,28 @@ def ClassMenu():
     
     return classMenu
 
+def LoginMenu():
+    loginMenu = Menu(
+        {
+            "Background Layer":BackgroundMenu(True),
+            "Save Files":SaveFilesMenu(False),
+            "New/Load":OptionsMenu(520, 0, 120, 480, ["New", "Load"], False)
+        },
+        dict(),
+        "Login"
+    )
+    loginMenu.options = {
+            "Login":LoginHandler("Login Done"),
+            "Login Done":MenuChangerHandler({"Save Files":True, "New/Load":False}, loginMenu, "File Choice"),
+            "File Choice":MenuOptionsHandler(["File0","File1","File2","File3","File4"], "File Choice", 0, 48, 0, 96)
+        }
+    for i in range(5):
+        loginMenu.options[f"File{i}"] = MenuChangerHandler({"New/Load":True}, loginMenu, f"FileOptions{i}")
+        loginMenu.options[f"FileOptions{i}"] = MenuOptionsHandler([f"New{i}", f"Load{i}"], "Login Done", 520, 24, 0, 48)
+        loginMenu.options[f"New{i}"] = NewFileHandler(i, -2)
+
+    return loginMenu
+
 def PauseMenu(world):
     characters = world.get_component(dialog.PlayerData)[0][1].characters
     pauseMenu = Menu(
@@ -127,14 +151,15 @@ def PauseMenu(world):
         "Portrait 1":PortraitMenu(2,144,True,1),
         "Portrait 2":PortraitMenu(2,286,True,2),
         "SharedStatsViewer":SharedStatsMenu(2,426,True),
-        "OptionsSidebar":OptionsMenu(452,2,188,474,["View Stats", "Equipment", "Inventory", "Change Spells", "Change Order", "Quit to Title"], True),
+        "OptionsSidebar":OptionsMenu(452,2,188,474,["View Stats", "Equipment", "Inventory", "Change Spells", "Change Order", "Save", "Quit to Title"], True),
         "Background Layer 1":BackgroundMenu(False),
         "Stats 0":StatsMenu(False,0),
         "Stats 1":StatsMenu(False,1),
-        "Stats 2":StatsMenu(False,2)
+        "Stats 2":StatsMenu(False,2),
+        "SaveSlots":SaveFilesMenu(False)
     },
     {
-        "OptionsSidebar":MenuOptionsHandler(["Stats","Equipment","Inventory","Spells","Order","Quit"],"OptionsSidebar",
+        "OptionsSidebar":MenuOptionsHandler(["Stats","Equipment","Inventory","Spells","Order","Save","Quit"],"OptionsSidebar",
                                                 448,22,0,48),
         "Stats":MenuOptionsHandler([f"Stats{i}" for i in range(len(characters))],"OptionsSidebar",
                                        8,72,0,144),
@@ -150,6 +175,15 @@ def PauseMenu(world):
     "OptionsSidebar"
     )
     pauseMenu.closable = True
+
+    pauseMenu.options["Save"] = MenuChangerHandler({"Background Layer 1":True,"SaveSlots":True},pauseMenu,"SaveSlots")
+    pauseMenu.options["SaveSlots"] = MenuOptionsHandler(["File0","File1","File2","File3","File4"], "SaveBack", 0, 48, 0, 96)
+    pauseMenu.options["SaveBack"] = MenuChangerHandler({"Background Layer 1":False,"SaveSlots":False},pauseMenu,"OptionsSidebar")
+
+    
+    for i in range(5):
+        pauseMenu.options[f"File{i}"] = SaveGameHandler(i, "SaveBack")
+    
     for i in range(3):
         pauseMenu.options[f"Order{i}"] = MenuOptionsHandler([f"Order{i}|{j}" for j in range(len(characters))],"Order",
                                        8,72,0,144)
@@ -163,7 +197,7 @@ def PauseMenu(world):
         pauseMenu.options[f"StatsBack{i}"] = MenuChangerHandler({"Background Layer 1":False,f"Stats {i}":False},pauseMenu,"OptionsSidebar")
         for stat in ["maxHP","physAtk","physDef","magiAtk","magiDef"]:
             pauseMenu.options[f"EV{stat}{i}"] = MenuEVBoostHandler(stat, i, f"EV{i}", f"EV{i}")
-
+        
     
     return pauseMenu
 
@@ -181,6 +215,114 @@ class MenuHandler:
         self.active = False
     def draw(self, screen):
         pass
+
+class LoginHandler(MenuHandler):
+    """
+    Handles the login process.
+    When finished, creates a Credentials entity.
+    """
+    def __init__(self, next):
+        self.next = next
+        self.stage = 0
+        self.username = None
+        self.password = None
+        self.typed = ""
+        self.font = pg.font.SysFont("Courier", 16)
+    def Activate(self):
+        pg.key.start_text_input()
+        self.active = True
+        self.stage = 0
+        self.username = None
+        self.password = None
+        self.typed = ""
+    def Deactivate(self):
+        pg.key.stop_text_input()
+        self.active = False
+    def draw(self, screen):
+        printScr("Login:", 16, 16, (255,255,255), self.font, screen)
+        if self.stage == 0:
+            printScr("Username:", 16, 64, (255,255,255), self.font, screen)
+            printScr(self.typed+"_", 16, 80, (255,255,255), self.font, screen)
+        elif self.stage == 1:
+            printScr("Password:", 16, 64, (255,255,255), self.font, screen)
+            printScr("*"*len(self.typed)+"_", 16, 80, (255,255,255), self.font, screen)
+        else:
+            printScr("Verifying...", 16, 64, (255,255,255), self.font, screen)
+    def Update(self, screen, world, inputs):
+        if self.stage == 2:
+            self.stage += 1
+        elif self.stage == 3:
+            print("Wake up server:", serverRW.wakeUpServer())
+            if serverRW.getData(self.username, self.password) == -1:
+                print("Invalid")
+                self.typed = ""
+                self.stage = 0
+            else:
+                print("Valid")
+                world.create_entity(serverRW.Credentials(self.username, self.password))
+                return self.next
+        for event in pg.event.get():
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_RETURN:
+                    if self.stage == 0:
+                        self.username = self.typed
+                        self.typed = ""
+                        self.stage += 1
+                    elif self.stage == 1:
+                        self.password = self.typed
+                        self.typed = ""
+                        self.stage += 1
+                    
+                elif event.key == pg.K_BACKSPACE:
+                    self.typed = self.typed[:-1]
+            elif event.type == pg.TEXTINPUT:
+                self.typed += event.text
+        return -1
+
+class SaveGameHandler(MenuHandler):
+    """
+    Handles saving file.
+    """
+    def __init__(self, slot, next):
+        self.slot = slot
+        self.next = next
+        self.font = pg.font.SysFont("Courier", 16)
+    def Activate(self):
+        self.active = True
+    def Deactivate(self):
+        self.active = False
+    def draw(self, screen):
+        pass
+    def Update(self, screen, world, inputs):
+        mapName = world.get_component(mapScreen.TileMap)[0][1].name
+        posx = world.get_components(mapScreen.PlayerMove, mapScreen.Position)[0][1][1].posx
+        posy = world.get_components(mapScreen.PlayerMove, mapScreen.Position)[0][1][1].posy
+        playerData = world.get_component(dialog.PlayerData)[0][1]
+        saveGame = save.SaveData(mapName, posx, posy, playerData)
+        creds = world.get_component(serverRW.Credentials)[0][1]
+        pickled = serverRW.prepareData(saveGame)
+        drawMenuBox(screen, 280, 220, 80, 40)
+        printScr("Saving...", 296, 236, (255,255,255), self.font, screen)
+        serverRW.saveData(creds.username, creds.password, "ProgrammingClubRPG", f"File{self.slot}", pickled)
+        return self.next
+
+class NewFileHandler(MenuHandler):
+    """
+    Handles creating a new file and booting it up.
+    """
+    def __init__(self, fileSlot, next):
+        self.fileSlot = fileSlot
+        self.next = next
+    def Activate(self):
+        self.active = True
+    def Deactivate(self):
+        self.active = False
+    def draw(self, screen):
+        pass
+    def Update(self, screen, world, inputs):
+        save.SaveData.newGame(world)
+        return self.next
+        
 
 class ClassChoiceHandler(MenuHandler):
     """
@@ -480,6 +622,20 @@ class ClassChoiceMenu(MenuItem):
             printWrapped(f"{className.title():10}:", 48, 20, 144, 80+i*45, (255,255,255), self.font, screen)
             printWrapped(f"{self.descriptions[className]}", 36, 20, 256, 80+i*45, (255,255,255), self.font, screen)
             
+class SaveFilesMenu(MenuItem):
+    def __init__(self, visible):
+        self.visible = visible
+        self.saveData = None
+        self.font = pg.font.SysFont("Courier", 16)
+    def draw(self, screen, world):
+        if self.saveData is None:
+            creds = world.get_component(serverRW.Credentials)[0][1]
+            self.saveData = serverRW.getData(creds.username, creds.password)["saves"]["ProgrammingClubRPG"]
+
+        for i, saveSlot in enumerate(self.saveData.keys()):
+            drawMenuBox(screen, 0, i*96, 640, 96)
+            if serverRW.decodePickle(self.saveData[saveSlot]) is None:
+                printScr("EMPTY FILE", 16, i*96+16, (255,255,255), self.font, screen)
 
 class PortraitMenu(MenuItem):
     def __init__(self, posx, posy, visible, index):

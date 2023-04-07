@@ -91,6 +91,13 @@ class SaveData:
                                     mapScreen.PlayerMove(8, world))
         
         # Processors
+        world.remove_processor(mapScreen.InputProcessor)
+        world.remove_processor(mapScreen.PlayerProcessor)
+        world.remove_processor(mapScreen.GraphicsProcessor)
+        world.remove_processor(battle.BattleProcessor)
+        world.remove_processor(menu.MenuProcessor)
+        world.remove_processor(dialog.DialogProcessor)
+        
         world.add_processor(mapScreen.InputProcessor(), priority=15)
         world.add_processor(mapScreen.PlayerProcessor(), priority=10)
         world.add_processor(mapScreen.GraphicsProcessor(), priority=5)
@@ -111,8 +118,43 @@ class SaveData:
             world.create_entity(classDict)
         mainChar = pStats.Character("Lux", "None", pStats.PlayerEquip(), pStats.PlayerBaseStats(0, classDict["none"], {"maxHP":0, "physAtk":0, "physDef":0, "magiAtk":0, "magiDef":0}),[])
 
-        return SaveData("openingArea", 2, 2, dialog.PlayerData([], dict(), [], [mainChar], battle.SharedStats(4, 12, 0, 0), "none")).startWorld(world)
+        return SaveData("openingArea", 14, 15, dialog.PlayerData([], dict(), [], [mainChar], battle.SharedStats(4, 12, 0, 0), "none")).startWorld(world)
 
+    def LoginSetup(world):
+        """
+        Sets up required conditions for the login menu.
+        """
+        inputs = world.create_entity(mapScreen.Input({
+            "up":[pg.K_UP, pg.K_w],
+            "down":[pg.K_DOWN, pg.K_s],
+            "left":[pg.K_LEFT, pg.K_a],
+            "right":[pg.K_RIGHT, pg.K_d],
+            "confirm":[pg.K_z, pg.K_RETURN],
+            "cancel":[pg.K_x, pg.K_LSHIFT, pg.K_RSHIFT],
+            "menu":[pg.K_c,pg.K_ESCAPE],
+            "z":[pg.K_z],
+            "x":[pg.K_x],
+            "c":[pg.K_c]
+        }))
+
+                
+        consts = world.create_entity(mapScreen.Consts(
+            32,            #TILE SIZE
+            (640,480)      #SCREEN SIZE
+        ))
+
+        m = world.create_entity(menu.LoginMenu())
+        world.component_for_entity(m, menu.Menu).Activate()
+        
+        # Processors
+        world.add_processor(mapScreen.InputProcessor(), priority=15)
+        #world.add_processor(mapScreen.PlayerProcessor(), priority=10)
+        #world.add_processor(mapScreen.GraphicsProcessor(), priority=5)
+        #world.add_processor(battle.BattleProcessor(), priority=2)
+        world.add_processor(menu.MenuProcessor(), priority=1)
+        #world.add_processor(dialog.DialogProcessor(), priority=0)
+        
+    
     def fromWorld(world):
         """
         Creates a SaveData object from the game world.

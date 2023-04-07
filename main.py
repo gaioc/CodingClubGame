@@ -21,9 +21,8 @@ pg.mixer.init()
 clock = pg.time.Clock()
 
 world = esper.World()
-s = save.SaveData.newGame(world)
-
-
+s = save.SaveData.LoginSetup(world)
+screen = pg.display.set_mode((640,480))
 
 i = 0
 while 1:

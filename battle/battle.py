@@ -154,7 +154,8 @@ class DamageEffect(SpellEffect):
         attacking = user.stats[self.offensive] * actionCommandResult
         for i, target in enumerate(targets):
             defending = target.stats[self.defensive]
-            crit = random.randint(0, 99) < 12
+            critUp = sum([x.amount for x in user.statusEffects if x.type == "CritUp"])
+            crit = random.random() < (1/20) + critUp
             damage = int(damageCalc(attacking, defending, self.amount) * (2 if crit else 1))
             if player:
                 ind = enemies.index(target)
@@ -208,7 +209,7 @@ class MultiVampireEffect(SpellEffect):
         attacking = user.stats[self.offensive] * actionCommandResult
         for i, target in enumerate(targets):
             defending = target.stats[self.defensive]
-            crit = random.randint(0, 99) < 12
+            crit = (random.randint(0, 99) < 12 and not(any([x.type == "CritProtect" for x in target.statusEffects])))
             damage = int(damageCalc(attacking, defending, self.amount) * (2 if crit else 1))
             if player:
                 ind = enemies.index(target)
@@ -336,9 +337,44 @@ class StatScalingStackingEffect(SpellEffect):
         print(total)
         for i, target in enumerate(targets):
                 target.statusEffects.append(StatChangeStatusEffect(self.name, self.turns, 
-                                                                   [(StatModifier(self.name+str(time.time())+str(random.random()), total), stat) for stat in self.stats],
+                                                                   [(StatModifier(self.name, total), stat) for stat in self.stats],
+                                                                   self.icon))                                                  
+class CritUpScalingEffect(SpellEffect):
+    """Inflict a stat buff/debuff of scaling strength on entity for a certain amount of turns."""
+    def __init__(self, scaling, amount, name, turns, icon):
+        self.scaling = scaling
+        self.amount = amount
+        self.name = name
+        self.turns = turns
+        self.icon = icon
+    def activateEffect(self, user, player, targets, players, enemies, actionCommandResult, world):
+        total = math.log(user.stats[self.scaling], 2) * self.amount * actionCommandResult
+        print(total)
+        for i, target in enumerate(targets):
+            if self.name not in [x.name for x in target.statusEffects]:
+                target.statusEffects.append(CritUpStatusEffect(self.name, self.turns, total,
                                                                    self.icon))
-
+            else:
+                for i, statusEffect in enumerate(target.statusEffects):
+                    if statusEffect.name == self.name:
+                        target.statusEffects[i] = CritUpStatusEffect(self.name, self.turns, total,
+                                                                   self.icon)
+class CritProtectEffect(SpellEffect):
+    """Protect selected member from crits."""
+    def __init__(self, name, turns, icon):
+        self.name = name
+        self.turns = turns
+        self.icon = icon
+    def activateEffect(self, user, player, targets, players, enemies, actionCommandResult, world):
+        for i, target in enumerate(targets):
+            if self.name not in [x.name for x in target.statusEffects]:
+                target.statusEffects.append(StatusEffect(self.name, "CritProtect", self.turns, False,
+                                                                   self.icon))
+            else:
+                for i, statusEffect in enumerate(target.statusEffects):
+                    if statusEffect.name == self.name:
+                        target.statusEffects[i] = StatusEffect(self.name, "CritProtect", self.turns, False,
+                                                                   self.icon)
 
 
 class StatusEffectDrawer(Dict):
@@ -361,7 +397,7 @@ class StatusEffect:
         self.icon = icon
     def activate(self, player, posInd, targetAmount, afflicted, world):
         pass
-class DoTStatusEffect:
+class DoTStatusEffect(StatusEffect):
     """Deals damage at the end of afflicted's turn."""
     def __init__(self, name, turns, damage, icon):
         self.name = name
@@ -378,7 +414,7 @@ class DoTStatusEffect:
             world.create_entity(TemporaryText(str(self.damage), (100,0,100), 30, 320 - (targetAmount-1)*0.5*160+random.randint(-32, 32) + posInd*160 - 64+random.randint(-32, 32), 200))
         if afflicted.hp < 0:
             afflicted.hp = 0
-class HoTStatusEffect:
+class HoTStatusEffect(StatusEffect):
     """Heals damage at the end of afflicted's turn."""
     def __init__(self, name, turns, healing, icon):
         self.name = name
@@ -395,7 +431,7 @@ class HoTStatusEffect:
             world.create_entity(TemporaryText(str(self.healing), (0,176,100), 30, 320 - (targetAmount-1)*0.5*160+random.randint(-32, 32) + posInd*160 - 64+random.randint(-32, 32), 200))
         if afflicted.hp > afflicted.stats["maxHP"]:
             afflicted.hp = afflicted.stats["maxHP"]
-class StatChangeStatusEffect:
+class StatChangeStatusEffect(StatusEffect):
     """Changes stats based on modifiers, for as long as it lasts. Stats get recalculated after every action."""
     def __init__(self, name, turns, modifiers, icon):
         self.name = name
@@ -404,6 +440,18 @@ class StatChangeStatusEffect:
         self.modifiers = modifiers
         self.endOfTurn = False
         self.icon = icon
+
+class CritUpStatusEffect(StatusEffect):
+    """Increases the chance of a critical hit by amount%."""
+    def __init__(self, name, turns, amount, icon):
+        self.name = name
+        self.type = "CritUp"
+        self.turns = turns
+        self.amount = amount
+        self.icon = icon
+        self.endOfTurn = False
+        #print("CritUp:",self.amount)
+
 
 class SharedStats:
     def __init__(self, tp, tpMax, gold, xp):
@@ -625,6 +673,7 @@ class BattleHandler:
         # Draw Status Effect Icons
         for i, player in enumerate(self.players):
             for j, statusEffect in enumerate(player.statusEffects):
+                print(j)
                 self.statusEffectDrawer.draw(screen, statusEffect.icon, 72+i*200+(j%3)*64, 84+(j//3)*64)
                 printtoscreen(screen,72+i*200+(j%3)*64,84+(j//3)*64,str(statusEffect.turns),self.smallfont,(255,255,255))
         for i, enemy in enumerate(self.enemies):
@@ -993,7 +1042,7 @@ spellList = {
     # MATH SKILLS
     "Math Skill L1":Spell("Math Skill L1", ["Math Skill L1", "Draws in enemy attacks", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L4":Spell("Math Skill L4", ["Math Skill L4", "Pulls damage away from allies,", "taking damage in the process for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[]), # UNFINISHED
-    "Math Skill L7":Spell("Math Skill L7", ["Math Skill L7", "Shields party from CRITs", "for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[]), # UNFINISHED
+    "Math Skill L7":Spell("Math Skill L7", ["Math Skill L7", "Shields party from CRITs", "for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[CritProtectEffect("Math Protect L7", 5, "protectCrit")]),
     "Math Skill L10":Spell("Math Skill L10", ["Math Skill L10", "Creates a ward over the party", "that absorbs damage until destroyed", "Hold C, then release!"], "allallies", actionCommandList["Hold C Fast"],[]), # UNFINISHED
     "Math Skill L13":Spell("Math Skill L13", ["Math Skill L13", "Increases Defensive Stats", "for 5 turns", "No Action Command"], "self", actionCommandList["None"],[StatChangeFixedEffect(["physDef", "magiDef"], 0.8, "Math L13", 4, "buffBothDef")]),
     "Math Skill L16":Spell("Math Skill L16", ["Math Skill L16", "Braces self for a physical attack,", "dealing damage back when guarded", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
@@ -1003,7 +1052,7 @@ spellList = {
     "Psychology Skill L1":Spell("Psychology Skill L1", ["Psychology Skill L1", "Lowers an enemy's physical and magic attack", "Press the shown directions in order!"], "1enemy", actionCommandList["Lenient 5 Directions"],[StatChangeScalingEffect("magiAtk", ["physAtk"], -0.1, "Psych L1 PhysAtk", 4, "debuffPhysAtk"), StatChangeScalingEffect("magiAtk", ["magiAtk"], -0.1, "Psych L1 MagiAtk", 4, "debuffMagiAtk")]),
     "Psychology Skill L4":Spell("Psychology Skill L4", ["Psychology Skill L4", "Magic attack, hits 1 enemy", "Hold X!"], "1enemy", actionCommandList["Hold X"],[DamageEffect(2.5, "magiAtk", "magiDef")]),
     "Psychology Skill L7":Spell("Psychology Skill L7", ["Psychology Skill L7", "Raises the party's defenses", "Press the shown directions as they appear!"], "allallies", actionCommandList["Hidden 5 Directions"],[StatChangeScalingEffect("magiAtk", ["physDef"], 0.1, "Psych L7 PhysDef", 4, "buffPhysDef"), StatChangeScalingEffect("magiAtk", ["magiDef"], 0.1, "Psych L7 MagiDef", 4, "buffMagiDef")]),
-    "Psychology Skill L10":Spell("Psychology Skill L10", ["Psychology Skill L10", "Increases an ally's crit chance", "Press the shown directions in time!"], "1ally", actionCommandList["4 Directions in a Row"],[]), # UNFINISHED
+    "Psychology Skill L10":Spell("Psychology Skill L10", ["Psychology Skill L10", "Increases an ally's crit chance", "Press the shown directions in time!"], "1ally", actionCommandList["4 Directions in a Row"],[CritUpScalingEffect("magiAtk", 0.1, "Psych L10 Crit Chance", 4, "buffCritRate")]),
     "Psychology Skill L13":Spell("Psychology Skill L13", ["Psychology Skill L13", "Increases an ally's physical attack", "Press the shown directions as they appear!"], "1ally", actionCommandList["Hidden 3 Fast Directions"],[StatChangeScalingEffect("magiAtk", ["physAtk"], 0.1, "Psych L13 PhysAtk", 4, "buffPhysAtk")]), 
     "Psychology Skill L16":Spell("Psychology Skill L16", ["Psychology Skill L16", "Increases an ally's magical attack", "Press the shown directions as they appear!"], "1ally", actionCommandList["Hidden 3 Fast Directions"],[StatChangeScalingEffect("magiAtk", ["magiAtk"], 0.1, "Psych L13 MagiAtk", 4, "buffMagiAtk")]), 
     "Psychology Skill L19":Spell("Psychology Skill L19", ["Psychology Skill L19", "Increases all of the party's stats!", "Press the shown directions as they appear", "twice, then mash Z!"], "allallies", actionCommandList["Hidden 5, Hidden 3, Mash Z"],[StatChangeScalingEffect("magiAtk", ["physAtk"], 0.2, "Psych L19 PhysAtk", 4, "buffPhysAtk"),StatChangeScalingEffect("magiAtk", ["magiAtk"], 0.2, "Psych L19 MagiAtk", 4, "buffMagiAtk"),StatChangeScalingEffect("magiAtk", ["physDef"], 0.2, "Psych L19 PhysDef", 4, "buffPhysDef"),StatChangeScalingEffect("magiAtk", ["magiDef"], 0.2, "Psych L19 MagiDef", 4, "buffMagiDef")]),

@@ -283,7 +283,9 @@ class DialogJoinParty(DialogInstance):
         spellsPerClass = consts.spellsPerClass
         count = 0
         for i in range(1, tempChar.baseStats.level+3, 3):
-            tempChar.spellNames.append(spellsPerClass[self.className.lower()][count])
+            print(i)
+            if i < 20:
+                tempChar.spellNames.append(spellsPerClass[self.className.lower()][count])
             count += 1
         playerData.characters.append(tempChar)
         return self.next

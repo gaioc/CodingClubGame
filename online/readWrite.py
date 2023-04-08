@@ -28,5 +28,4 @@ def saveData(userid, password, game, saveSlot, data):
 def prepareData(data):
     return base64.b64encode(pickle.dumps(data))
 def decodePickle(pickled):
-    print(pickled, base64.b64decode(pickled), pickle.loads(base64.b64decode(pickled)))
     return pickle.loads(base64.b64decode(pickled))

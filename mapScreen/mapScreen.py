@@ -155,9 +155,7 @@ def loadMap(world, mapsDict, mapName, npcDict, tileMapping):
     print(f"Old background music:[{oldMap.backgroundMusic}]\nNew background music:[{currMap.backgroundMusic}]")
     
     # Background music
-    if oldMap.backgroundMusic != currMap.backgroundMusic:
-        audio.stopMusic()
-        audio.playMusic(currMap.backgroundMusic)
+    audio.playMusic(currMap.backgroundMusic, world, False)
     
         
 

@@ -7,6 +7,7 @@ import math
 import copy
 import esper
 import online.readWrite as serverRW
+import immutable.consts as consts
 import save.save as save
 
 def printScr(text: str, posx: float, posy: float, colour: pg.Color, font: pg.font.Font, screen: pg.Surface):
@@ -107,15 +108,19 @@ def ClassMenu():
         {
             "Background Layer 0":BackgroundMenu(True),
             "ClassChoices":ClassChoiceMenu(True,0),
+            "ConfirmationWindow":OptionsMenu(120, 100, 400, 240, ["Are you sure?","This choice is permanent.","Don't sweat it too much, though,","all of them will be usable."], False)
         },
         {
-            "ClassOptions":MenuOptionsHandler(["english", "science", "math", "art", "history", "psychology", "languages"], True,
+            "ClassOptions":MenuOptionsHandler(["englishConfirm", "scienceConfirm", "mathConfirm", "artConfirm", "historyConfirm", "psychologyConfirm", "languagesConfirm"], True,
                                              8,88,0,45)
         },
         "ClassOptions"
     )
 
     for className in ["english", "science", "math", "art", "history", "psychology", "languages"]:
+        classMenu.options[f"{className}Confirm"] = MenuChangerHandler({"ConfirmationWindow":True}, classMenu, f"{className}FinalCheck")
+        classMenu.options[f"{className}Back"] = MenuChangerHandler({"ConfirmationWindow":False}, classMenu, "ClassOptions")
+        classMenu.options[f"{className}FinalCheck"] = MenuOptionsHandler([className], f"{className}Back", 500, 500, 0, 0)
         classMenu.options[className] = ClassChoiceHandler(className,0,-2)
     
     return classMenu
@@ -139,7 +144,9 @@ def LoginMenu():
         loginMenu.options[f"File{i}"] = MenuChangerHandler({"New/Load":True}, loginMenu, f"FileOptions{i}")
         loginMenu.options[f"FileOptions{i}"] = MenuOptionsHandler([f"New{i}", f"Load{i}"], "Login Done", 520, 24, 0, 48)
         loginMenu.options[f"New{i}"] = NewFileHandler(i, -2)
+        loginMenu.options[f"Load{i}"] = LoadFileHandler(i, -2)
 
+    
     return loginMenu
 
 def PauseMenu(world):
@@ -248,6 +255,13 @@ class LoginHandler(MenuHandler):
             printScr("*"*len(self.typed)+"_", 16, 80, (255,255,255), self.font, screen)
         else:
             printScr("Verifying...", 16, 64, (255,255,255), self.font, screen)
+
+        printScr("Controls:",16,120,(255,255,255),self.font,screen)
+        printScr("WASD or ARROW KEYS: Move, navigate menus",16,140,(255,255,255),self.font,screen)
+        printScr("Z or RETURN: Confirm",16,156,(255,255,255),self.font,screen)
+        printScr("Z or RETURN while walking at someone/thing: Interact",16,172,(255,255,255),self.font,screen)
+        printScr("X or LEFT SHIFT: Cancel, skip text",16,188,(255,255,255),self.font,screen)
+        printScr("C or ESCAPE: Pause",16,204,(255,255,255),self.font,screen)
     def Update(self, screen, world, inputs):
         if self.stage == 2:
             self.stage += 1
@@ -295,8 +309,8 @@ class SaveGameHandler(MenuHandler):
         pass
     def Update(self, screen, world, inputs):
         mapName = world.get_component(mapScreen.TileMap)[0][1].name
-        posx = world.get_components(mapScreen.PlayerMove, mapScreen.Position)[0][1][1].posx
-        posy = world.get_components(mapScreen.PlayerMove, mapScreen.Position)[0][1][1].posy
+        posx = int(world.get_components(mapScreen.PlayerMove, mapScreen.Position)[0][1][1].posx//32)
+        posy = int(world.get_components(mapScreen.PlayerMove, mapScreen.Position)[0][1][1].posy//32)
         playerData = world.get_component(dialog.PlayerData)[0][1]
         saveGame = save.SaveData(mapName, posx, posy, playerData)
         creds = world.get_component(serverRW.Credentials)[0][1]
@@ -322,7 +336,26 @@ class NewFileHandler(MenuHandler):
     def Update(self, screen, world, inputs):
         save.SaveData.newGame(world)
         return self.next
-        
+
+class LoadFileHandler(MenuHandler):
+    """
+    Handles loading save data.
+    """
+    def __init__(self, fileSlot, next):
+        self.fileSlot = fileSlot
+        self.next = next
+    def Activate(self):
+        self.active = True
+    def Deactivate(self):
+        self.active = False
+    def draw(self, screen):
+        pass
+    def Update(self, screen, world, inputs):
+        creds = world.get_component(serverRW.Credentials)[0][1]
+        saveData = serverRW.getData(creds.username, creds.password)["saves"]["ProgrammingClubRPG"][f"File{self.fileSlot}"]
+        saveObj = serverRW.decodePickle(saveData)
+        saveObj.startWorld(world)
+        return self.next
 
 class ClassChoiceHandler(MenuHandler):
     """
@@ -349,15 +382,7 @@ class ClassChoiceHandler(MenuHandler):
         character.baseStats.calculate()
         character.calculate()
         character.hp = min(character.hp, character.baseStats.finalStats["maxHP"])
-        spellsPerClass = {
-            "art":["Art Skill L1", "Art Skill L4", "Art Skill L7", "Art Skill L10", "Revive", "Art Skill L16", "Art Skill L19"],
-            "science":["Science Skill L1", "Science Skill L4", "Science Skill L7", "Science Skill L10", "Science Skill L13", "Science Skill L16", "Science Skill L19"],
-            "math":["Math Skill L1", "Math Skill L4", "Math Skill L7", "Math Skill L10", "Math Skill L13", "Math Skill L16", "Math Skill L19"],
-            "psychology":["Psychology Skill L1", "Psychology Skill L4", "Psychology Skill L7", "Psychology Skill L10", "Psychology Skill L13", "Psychology Skill L16", "Psychology Skill L19"],
-            "history":["History Skill L1", "History Skill L4", "History Skill L7", "Revive", "History Skill L13", "History Skill L16", "History Skill L19"],
-            "english":["English Skill L1", "English Skill L4", "English Skill L7", "Triple Hit", "Revive", "English Skill L16", "English Skill L19"],
-            "languages":["Languages Skill L1", "Languages Skill L4", "Triple Hit", "Languages Skill L10", "Languages Skill L13", "Languages Skill L16", "Languages Skill L19"],
-        }
+        spellsPerClass = consts.spellsPerClass
         character.spellNames = [spellsPerClass[self.className][0]]
         playerData.mainClass = self.className.lower()
         return self.next
@@ -513,29 +538,7 @@ class StatsMenu(MenuItem):
         self.font = pg.font.SysFont("Courier", 16)
         self.index = index
     def draw(self, screen, world):
-        xpPerLevelUp = [
-                   1,
-                   5,
-                  10,
-                  30,
-                 100,
-                 150,
-                 300,
-                 900,
-                1200,
-                6000,
-                9000,
-               18000,
-               54000,
-              180000,
-              270000,
-              540000,
-             1620000,
-             5400000,
-            24300000,
-            48600000,
-            10**100
-        ]
+        xpPerLevelUp = consts.xpPerLevelUp
         
         character = world.get_component(dialog.PlayerData)[0][1].characters[self.index]
         hp = character.hp
@@ -634,8 +637,11 @@ class SaveFilesMenu(MenuItem):
 
         for i, saveSlot in enumerate(self.saveData.keys()):
             drawMenuBox(screen, 0, i*96, 640, 96)
-            if serverRW.decodePickle(self.saveData[saveSlot]) is None:
+            if self.saveData[saveSlot] is None:
                 printScr("EMPTY FILE", 16, i*96+16, (255,255,255), self.font, screen)
+            else:
+                data = serverRW.decodePickle(self.saveData[saveSlot])
+                printScr(f"Party level {data.playerData.characters[0].baseStats.level}",16,i*96+16,(255,255,255),self.font,screen)
 
 class PortraitMenu(MenuItem):
     def __init__(self, posx, posy, visible, index):
@@ -647,29 +653,7 @@ class PortraitMenu(MenuItem):
         self.index = index
     def draw(self, screen, world):
         
-        xpPerLevelUp = [
-                   1,
-                   5,
-                  10,
-                  30,
-                 100,
-                 150,
-                 300,
-                 900,
-                1200,
-                6000,
-                9000,
-               18000,
-               54000,
-              180000,
-              270000,
-              540000,
-             1620000,
-             5400000,
-            24300000,
-            48600000,
-            10**100
-        ]
+        xpPerLevelUp = consts.xpPerLevelUp
         
         # Backing
         drawMenuBox(screen, self.posx, self.posy, 550, 144)

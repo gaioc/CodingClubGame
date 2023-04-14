@@ -179,6 +179,11 @@ Great! Just remember: if you can't keep going, run and I'll call them off.||2
 Good fight!||-2
 Ok then.||-2
 
+Kefka
+What am I doing here? I don't know!||1
+Life... dreams... hope... Where do they come from? And where do they go? Such meaningless things...I'll destroy them all!||2
+\Battle Kefka||-2
+
 Healing Place Interaction
 Bobby:Hello!||1
 Bobby:Welcome to the healing place!||2

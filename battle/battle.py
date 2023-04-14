@@ -776,6 +776,8 @@ class BattleHandler:
         if self.turn == "players":
 
             if self.players[self.subturn].hp < 1:
+                print("KO-d!")
+                self.players[self.subturn].statusEffects = []
                 result = -2
             else:
                 # run current BattleAction
@@ -849,6 +851,7 @@ class BattleHandler:
                         self.timing = -1
             self.timing += 1
             if self.subturn >= len(self.enemies):
+                print("Enemies done!")
                 self.turn = "players"
                 self.subturn = 0
                 self.timing = 0
@@ -1029,19 +1032,25 @@ def readBattleData(data, enemyData):
 guardCommands = {
     "None":act.ActionCommand(),
     "normalGuard":act.pressButtonCommand(["z"], 30, 3, True, False),
-    "sequenceGuard":act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 60, True)
+    "fastGuard":act.pressButtonCommand(["z"], 20, 9, True, False),
+    "sequenceGuard":act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 60, True),
+    "heartlessGuard":act.MultipleActionCommands([act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 120, False),act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 52, False),act.buttonSequenceCommand(["z"], 16, 48, True)],30)
 }
 enemyAttacks = {
     "enemyAttack":Spell("Attack", ["Normal Attack"], "1enemy", guardCommands["normalGuard"], [DamageEffect(1, "physAtk", "physDef")]),
     "dummyBuff":Spell("Dummy Up", ["Buffs all allies"], "allallies", guardCommands["None"], [ShieldScalingEffect("magiAtk", 1, "Dummy Shield", 4, "absorb")]),
     "dummyAoE":Spell("Boiler Room", ["AoE magic damage"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(1, "magiAtk", "magiDef")]),
-    "boneSpray":Spell("Bone Spray", ["Shoots bones"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(1, "magiAtk", "magiDef")])
+    "boneSpray":Spell("Bone Spray", ["Shoots bones"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(1, "magiAtk", "magiDef")]),
+    "Havoc Wing":Spell("Havoc Wing", ["Heavy physical damage"], "1enemy", guardCommands["fastGuard"], [DamageEffect(3, "physAtk", "physDef")]),
+    "Firaga":Spell("Firaga", ["Heavy magical AoE"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(2, "magiAtk", "magiDef")]),
+    "Heartless Angel":Spell("Heartless Angel", ["Doom"], "allenemies", guardCommands["heartlessGuard"], [DamageEffect(3, "magiAtk", "magiDef"), DoTEffect(0.5, "magiAtk", "Heartless Angel", 2, "poisonStrong")]),
 }
 
 enemies = {
     "Tutorial Blob":BattleEnemy("Dark Blob", {"maxHP":10,"physAtk":5,"physDef":5,"magiAtk":5,"magiDef":5}, 10, [enemyAttacks["enemyAttack"]], pg.image.load("assets/art/battle/enemies/darkBlob.png").convert_alpha(),EnemyAI()),
     "Dummy":BattleEnemy("Dummy", {"maxHP":15,"physAtk":6,"magiAtk":6,"physDef":10,"magiDef":10},15,[enemyAttacks["enemyAttack"]]*1+[enemyAttacks["dummyBuff"],enemyAttacks["dummyAoE"]]*100,pg.image.load("assets/art/battle/enemies/dummy.png").convert_alpha(),EnemyAI()),
     "Testing Skeleton":BattleEnemy("Skeleton", {"maxHP":50000,"physAtk":10,"physDef":10,"magiAtk":10,"magiDef":10}, 50000, [enemyAttacks["enemyAttack"],enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),EnemyAI()),
+    "Kefka Final Battle":BattleEnemy("Kefka", {"maxHP":4500,"physAtk":200,"magiAtk":300,"physDef":200,"magiDef":300}, 4500, [enemyAttacks["enemyAttack"]]*0+[enemyAttacks["Havoc Wing"]]*0+[enemyAttacks["Firaga"],enemyAttacks["Heartless Angel"]], pg.image.load("assets/art/battle/enemies/kefka.png").convert_alpha(), EnemyAI())
 }
 
 actionCommandList = {
@@ -1135,7 +1144,7 @@ spellList = {
     "Triple Hit":Spell("Triple Hit", ["Triple Hit", "Hits three times", "Press the shown buttons in time!"], "1enemy", actionCommandList["Triple Hit"], [DamageEffect(1, "physAtk", "physDef") for i in range(3)]),
     "Languages Skill L10":Spell("Languages Skill L10", ["Languages Skill L10", "Deals heavy damage over 3 turns", "Press X or C!"], "1enemy", actionCommandList["Hidden X/C Fast"],[DoTEffect(1, "magiAtk", "Languages DoT", 3, "poisonStrong")]),
     "Languages Skill L13":Spell("Languages Skill L13", ["Languages Skill L13", "Attacks, with a chance to find an item", "Press Z!"], "1enemy", actionCommandList["Press Z Fast"],[]), # UNFINISHED
-    "Languages Skill L16":Spell("Languages Skill L16", ["Languages Skill L16", "Activates end-of-turn effects", "on one enemy 3 times", "No Action Command"], "1enemy", actionCommandList["None"],[ActivateEffects() for x in range(3)]), # UNFINISHED
+    "Languages Skill L16":Spell("Languages Skill L16", ["Languages Skill L16", "Activates end-of-turn effects", "on one enemy 3 times", "No Action Command"], "1enemy", actionCommandList["None"],[ActivateEffects() for x in range(3)]),
     "Languages Skill L19":Spell("Languages Skill L19", ["Languages Skill L19", "Removes status effects,", "dealing damage relative to amount", "Up-Up-Down-Down-","-Left-Right-Left-Right-","-X-C-Z!"], "1enemy", actionCommandList["Konami Code"],[]), # UNFINISHED
 
     "English Skill L1":Spell("English Skill L1", ["English Skill L1", "Magic attack, hits 1 enemy", "Press the shown button!"], "1enemy", actionCommandList["Hidden Button Press"], [DamageEffect(2.5, "magiAtk", "magiDef")]),

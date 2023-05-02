@@ -709,10 +709,10 @@ class BattleHandler:
         for i, player in enumerate(self.players):
             if self.turn == "players":
                 #Highlight current turn
-                pg.draw.rect(screen, ((50,150,255) if i == self.subturn else (0,0,160)), pg.Rect(40+i*200, 10, 200, 40))
+                pg.draw.rect(screen, (consts.menuSelectedColour if i == self.subturn else consts.menuBackgroundColour), pg.Rect(40+i*200, 10, 200, 40))
             elif self.turn == "enemies":
                 #Highlight the enemy target
-                pg.draw.rect(screen, ((50,150,255) if (self.timing > 0 and ((i == self.currentEnemyAction.targetInd and self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].targeting == "1enemy") or self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].targeting == "allenemies")) else (0,0,160)), pg.Rect(40+i*200, 10, 200, 40))
+                pg.draw.rect(screen, (consts.menuSelectedColour if (self.timing > 0 and ((i == self.currentEnemyAction.targetInd and self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].targeting == "1enemy") or self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].targeting == "allenemies")) else consts.menuBackgroundColour), pg.Rect(40+i*200, 10, 200, 40))
             pg.draw.rect(screen, (255,255,255), pg.Rect(40+i*200, 10, 200, 40), 4)
             name = player.name
             hp = f"{player.hp}/{player.stats['maxHP']}"
@@ -826,7 +826,7 @@ class BattleHandler:
                     self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].Activate()
                 elif self.timing < 30:
                     margin = 24
-                    pg.draw.rect(screen, (0,0,160), pg.Rect(140, 320, 500, 160))
+                    pg.draw.rect(screen, consts.menuBackgroundColour, pg.Rect(140, 320, 500, 160))
                     pg.draw.rect(screen, (255,255,255), pg.Rect(140, 320, 500, 160),4)
                     if self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].name != "Attack":
                         printtoscreen(screen, 140+margin, 320+margin, f"{self.enemies[self.subturn].name} used {self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].name}!", self.font, (255,255,255))
@@ -895,7 +895,7 @@ class MenuOptionsAction:
         self.selected = 0
     def Update(self, screen, world, inputs):
         margin = 24
-        pg.draw.rect(screen, (0,0,160), pg.Rect(140, 320, 500, 160))
+        pg.draw.rect(screen, consts.menuBackgroundColour, pg.Rect(140, 320, 500, 160))
         pg.draw.rect(screen, (255,255,255), pg.Rect(140, 320, 500, 160),4)
         for i, option in enumerate(self.optionList):
             printtoscreen(screen, (i%3)*160+140+margin, (i//3)*20+320+margin, option, self.font, (255,255,255))
@@ -948,7 +948,7 @@ class DescriptionConfirmAction:
         self.waitingComplete = False
     def Update(self, screen, world, inputs):
         margin = 24
-        pg.draw.rect(screen, (0,0,160), pg.Rect(140, 320, 500, 160))
+        pg.draw.rect(screen, consts.menuBackgroundColour, pg.Rect(140, 320, 500, 160))
         pg.draw.rect(screen, (255,255,255), pg.Rect(140, 320, 500, 160),4)
         for i, option in enumerate(self.description):
             printtoscreen(screen, 140+margin, i*20+320+margin, option, self.font, (255,255,255))

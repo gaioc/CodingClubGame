@@ -36,7 +36,7 @@ def printWrapped(text: str, width: int, lineSpacing: int, posx: float, posy: flo
         printScr("".join(wrapped[i]), posx, posy+lineSpacing*i, (255,255,255), font, screen)
 
 def drawMenuBox(screen, left, top, length, height):
-    pg.draw.rect(screen, (0,0,160), pg.Rect(left, top, length, height))
+    pg.draw.rect(screen, consts.menuBackgroundColour, pg.Rect(left, top, length, height))
     pg.draw.rect(screen, (255,255,255), pg.Rect(left, top, length, height),4)
 
 def drawHorizontalBar(screen, left, top, length, height, color, value, max):

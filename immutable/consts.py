@@ -31,6 +31,6 @@ spellsPerClass = {
     "languages":["Languages Skill L1", "Assist", "Triple Hit", "Languages Skill L10", "Languages Skill L13", "Languages Skill L16", "Languages Skill L19"],
 }
 
-# MENU COLOURS (default 0,0,160 and 100, 125, 255)
+# MENU COLOURS (default 0,0,160 and 50, 125, 255)
 menuBackgroundColour = (0,0,160)
-menuSelectedColour = (100,125,255)
+menuSelectedColour = (50,125,255)

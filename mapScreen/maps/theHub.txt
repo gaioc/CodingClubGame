@@ -36,6 +36,7 @@ gggggggggggggggggggggggg<>gggggggggggggggggggggg
 ggggggggggggggggggggggggFFgggggggggggggggggggggg
 
 28|28|Dummy Builder|npc.png
+12|28|Kefka|npc.png
 
 24|30|Opening Scene
 25|30|Opening Scene

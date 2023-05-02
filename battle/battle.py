@@ -157,18 +157,37 @@ class DamageEffect(SpellEffect):
             critUp = sum([x.amount for x in user.statusEffects if x.type == "CritUp"])
             crit = random.random() < (1/20) + critUp
             damage = int(damageCalc(attacking, defending, self.amount) * (2 if crit else 1))
+            shields = [(i, x) for i, x in enumerate(target.statusEffects) if x.type == "Shield"]
+            finalEffects = target.statusEffects
+            finalDamage = damage
+            while finalDamage > 0 and len(shields) > 0:
+                if finalDamage >= shields[0][1].amount:
+                    finalDamage -= shields[0][1].amount
+                    finalEffects[shields[0][0]] = None
+                    shields.pop(0)
+                else:
+                    shields[0][1].amount -= finalDamage
+                    finalDamage = 0
+            target.statusEffects = [x for x in finalEffects if x is not None]
+                
             if player:
                 ind = enemies.index(target)
-                world.create_entity(TemporaryText(str(damage), (255*random.randint(7,10)/10,0,0), 30, 320 - (len(enemies)-1)*0.5*160+random.randint(-32, 32) + ind*160 - 64+random.randint(-32, 32), 200))
+                if finalDamage > 0:
+                    world.create_entity(TemporaryText(str(finalDamage), (255*random.randint(7,10)/10,0,0), 30, 320 - (len(enemies)-1)*0.5*160+random.randint(-32, 32) + ind*160 - 64+random.randint(-32, 32), 200))
+                else:
+                    world.create_entity(TemporaryText(str(damage), (100,100,255*random.randint(7,10)/10), 30, 320 - (len(enemies)-1)*0.5*160+random.randint(-32, 32) + ind*160 - 64+random.randint(-32, 32), 200))
                 if crit:
                     world.create_entity(TemporaryText("CRIT", (100,0,150), 30, 320 - (len(enemies)-1)*0.5*160+random.randint(-32, 32) + ind*160 - 64+random.randint(-32, 32), 160))
             else:
                 ind = enemies.index(target)
-                world.create_entity(TemporaryText(str(damage), (255*random.randint(7,10)/10,0,0), 30, 48+ind*200+64, 80))
+                if finalDamage > 0:
+                    world.create_entity(TemporaryText(str(finalDamage), (255*random.randint(7,10)/10,0,0), 30, 48+ind*200+64, 80))
+                else:
+                    world.create_entity(TemporaryText(str(damage), (100,100,255*random.randint(7,10)/10), 30, 48+ind*200+64, 80))
                 if crit:
                     world.create_entity(TemporaryText("CRIT", (100,0,150), 30, 48+ind*200+64, 160))
                 #print(f"{damage} damage to {target.name}!")
-            target.hp -= damage
+            target.hp -= finalDamage
             if target.hp < 0:
                 target.hp = 0
 class HealEffect(SpellEffect):
@@ -359,6 +378,29 @@ class CritUpScalingEffect(SpellEffect):
                     if statusEffect.name == self.name:
                         target.statusEffects[i] = CritUpStatusEffect(self.name, self.turns, total,
                                                                    self.icon)
+
+class ShieldScalingEffect(SpellEffect):
+    """Put a shield of scaling strength on entity for a certain amount of turns."""
+    def __init__(self, scaling, amount, name, turns, icon):
+        self.scaling = scaling
+        self.amount = amount
+        self.name = name
+        self.turns = turns
+        self.icon = icon
+    def activateEffect(self, user, player, targets, players, enemies, actionCommandResult, world):
+        total = int(self.amount * user.stats[self.scaling] * actionCommandResult)
+        print(total)
+        for i, target in enumerate(targets):
+            if self.name not in [x.name for x in target.statusEffects]:
+                target.statusEffects.append(ShieldStatusEffect(self.name, total,
+                                                                   self.icon))
+            else:
+                for i, statusEffect in enumerate(target.statusEffects):
+                    if statusEffect.name == self.name and statusEffect.amount < total:
+                        target.statusEffects[i] = ShieldStatusEffect(self.name, total,
+                                                                   self.icon)
+
+
 class CritProtectEffect(SpellEffect):
     """Protect selected member from crits."""
     def __init__(self, name, turns, icon):
@@ -393,6 +435,7 @@ class StatusEffect:
         self.name = name
         self.type = type
         self.endOfTurn = endOfTurn
+        self.timed = True
         self.turns = turns
         self.icon = icon
     def activate(self, player, posInd, targetAmount, afflicted, world):
@@ -403,6 +446,7 @@ class DoTStatusEffect(StatusEffect):
         self.name = name
         self.type = "DoT"
         self.endOfTurn = True
+        self.timed = True
         self.damage = damage
         self.turns = turns
         self.icon = icon
@@ -420,6 +464,7 @@ class HoTStatusEffect(StatusEffect):
         self.name = name
         self.type = "HoT"
         self.endOfTurn = True
+        self.timed = True
         self.healing = healing
         self.turns = turns
         self.icon = icon
@@ -439,6 +484,7 @@ class StatChangeStatusEffect(StatusEffect):
         self.turns = turns
         self.modifiers = modifiers
         self.endOfTurn = False
+        self.timed = True
         self.icon = icon
 
 class CritUpStatusEffect(StatusEffect):
@@ -450,8 +496,18 @@ class CritUpStatusEffect(StatusEffect):
         self.amount = amount
         self.icon = icon
         self.endOfTurn = False
+        self.timed = True
         #print("CritUp:",self.amount)
 
+class ShieldStatusEffect(StatusEffect):
+    """Absorbs damage."""
+    def __init__(self, name, amount, icon):
+        self.name = name
+        self.type = "Shield"
+        self.amount = amount
+        self.icon = icon
+        self.endOfTurn = False
+        self.timed = False
 
 class SharedStats:
     def __init__(self, tp, tpMax, gold, xp):
@@ -653,10 +709,10 @@ class BattleHandler:
         for i, player in enumerate(self.players):
             if self.turn == "players":
                 #Highlight current turn
-                pg.draw.rect(screen, ((50,150,255) if i == self.subturn else (0,0,160)), pg.Rect(40+i*200, 10, 200, 40))
+                pg.draw.rect(screen, (consts.menuSelectedColour if i == self.subturn else consts.menuBackgroundColour), pg.Rect(40+i*200, 10, 200, 40))
             elif self.turn == "enemies":
                 #Highlight the enemy target
-                pg.draw.rect(screen, ((50,150,255) if (self.timing > 0 and ((i == self.currentEnemyAction.targetInd and self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].targeting == "1enemy") or self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].targeting == "allenemies")) else (0,0,160)), pg.Rect(40+i*200, 10, 200, 40))
+                pg.draw.rect(screen, (consts.menuSelectedColour if (self.timing > 0 and ((i == self.currentEnemyAction.targetInd and self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].targeting == "1enemy") or self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].targeting == "allenemies")) else consts.menuBackgroundColour), pg.Rect(40+i*200, 10, 200, 40))
             pg.draw.rect(screen, (255,255,255), pg.Rect(40+i*200, 10, 200, 40), 4)
             name = player.name
             hp = f"{player.hp}/{player.stats['maxHP']}"
@@ -673,13 +729,19 @@ class BattleHandler:
         # Draw Status Effect Icons
         for i, player in enumerate(self.players):
             for j, statusEffect in enumerate(player.statusEffects):
-                print(j)
+                #print(j)
                 self.statusEffectDrawer.draw(screen, statusEffect.icon, 72+i*200+(j%3)*64, 84+(j//3)*64)
-                printtoscreen(screen,72+i*200+(j%3)*64,84+(j//3)*64,str(statusEffect.turns),self.smallfont,(255,255,255))
+                if statusEffect.timed:
+                    printtoscreen(screen,72+i*200+(j%3)*64,84+(j//3)*64,str(statusEffect.turns),self.smallfont,(255,255,255))
+                else:
+                    printtoscreen(screen,60+i*200+(j%3)*64,84+(j//3)*64,f"{statusEffect.amount}HP",self.smallfont,(255,255,255))
         for i, enemy in enumerate(self.enemies):
             for j, statusEffect in enumerate(enemy.statusEffects):
                 self.statusEffectDrawer.draw(screen, statusEffect.icon, 256-(self.initialEnemyCount-1)*0.5*160+enemy.id*160+(j%3)*64, 292+(j//3)*64)
-                printtoscreen(screen,256-(self.initialEnemyCount-1)*0.5*160+enemy.id*160+(j%3)*64, 292+(j//3)*64,str(statusEffect.turns),self.smallfont,(255,255,255))
+                if statusEffect.timed:
+                    printtoscreen(screen,256-(self.initialEnemyCount-1)*0.5*160+enemy.id*160+(j%3)*64, 292+(j//3)*64,str(statusEffect.turns),self.smallfont,(255,255,255))
+                else:
+                    printtoscreen(screen,256-(self.initialEnemyCount-1)*0.5*160+enemy.id*160+(j%3)*64-16, 292+(j//3)*64,f"{statusEffect.amount}HP",self.smallfont,(255,255,255))
         
     
     def Update(self, screen, inputs, world):
@@ -714,6 +776,8 @@ class BattleHandler:
         if self.turn == "players":
 
             if self.players[self.subturn].hp < 1:
+                print("KO-d!")
+                self.players[self.subturn].statusEffects = []
                 result = -2
             else:
                 # run current BattleAction
@@ -730,8 +794,9 @@ class BattleHandler:
                 for effect in self.players[self.subturn].statusEffects:
                     if effect.endOfTurn:
                         effect.activate(True, self.subturn, len(self.players), self.players[self.subturn], world)
-                    effect.turns -= 1
-                self.players[self.subturn].statusEffects = [i for i in self.players[self.subturn].statusEffects if i.turns > 0]
+                    if effect.timed:
+                        effect.turns -= 1
+                self.players[self.subturn].statusEffects = [i for i in self.players[self.subturn].statusEffects if (not(i.timed) or i.turns > 0)]
 
                 
                 #Next party member!
@@ -761,7 +826,7 @@ class BattleHandler:
                     self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].Activate()
                 elif self.timing < 30:
                     margin = 24
-                    pg.draw.rect(screen, (0,0,160), pg.Rect(140, 320, 500, 160))
+                    pg.draw.rect(screen, consts.menuBackgroundColour, pg.Rect(140, 320, 500, 160))
                     pg.draw.rect(screen, (255,255,255), pg.Rect(140, 320, 500, 160),4)
                     if self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].name != "Attack":
                         printtoscreen(screen, 140+margin, 320+margin, f"{self.enemies[self.subturn].name} used {self.enemies[self.subturn].spells[self.currentEnemyAction.actionInd].name}!", self.font, (255,255,255))
@@ -774,8 +839,9 @@ class BattleHandler:
                         for effect in self.enemies[self.subturn].statusEffects:
                             if effect.endOfTurn:
                                 effect.activate(False, self.subturn, len(self.enemies), self.enemies[self.subturn], world)
-                            effect.turns -= 1
-                        self.enemies[self.subturn].statusEffects = [i for i in self.enemies[self.subturn].statusEffects if i.turns > 0]
+                            if effect.timed:
+                                effect.turns -= 1
+                        self.enemies[self.subturn].statusEffects = [i for i in self.enemies[self.subturn].statusEffects if (not(i.timed) or i.turns > 0)]
                         oldenemies = self.enemies
                         self.enemies = [enemy for enemy in self.enemies if enemy.hp > 0]
                         # Next
@@ -785,6 +851,7 @@ class BattleHandler:
                         self.timing = -1
             self.timing += 1
             if self.subturn >= len(self.enemies):
+                print("Enemies done!")
                 self.turn = "players"
                 self.subturn = 0
                 self.timing = 0
@@ -828,7 +895,7 @@ class MenuOptionsAction:
         self.selected = 0
     def Update(self, screen, world, inputs):
         margin = 24
-        pg.draw.rect(screen, (0,0,160), pg.Rect(140, 320, 500, 160))
+        pg.draw.rect(screen, consts.menuBackgroundColour, pg.Rect(140, 320, 500, 160))
         pg.draw.rect(screen, (255,255,255), pg.Rect(140, 320, 500, 160),4)
         for i, option in enumerate(self.optionList):
             printtoscreen(screen, (i%3)*160+140+margin, (i//3)*20+320+margin, option, self.font, (255,255,255))
@@ -881,7 +948,7 @@ class DescriptionConfirmAction:
         self.waitingComplete = False
     def Update(self, screen, world, inputs):
         margin = 24
-        pg.draw.rect(screen, (0,0,160), pg.Rect(140, 320, 500, 160))
+        pg.draw.rect(screen, consts.menuBackgroundColour, pg.Rect(140, 320, 500, 160))
         pg.draw.rect(screen, (255,255,255), pg.Rect(140, 320, 500, 160),4)
         for i, option in enumerate(self.description):
             printtoscreen(screen, 140+margin, i*20+320+margin, option, self.font, (255,255,255))
@@ -965,19 +1032,25 @@ def readBattleData(data, enemyData):
 guardCommands = {
     "None":act.ActionCommand(),
     "normalGuard":act.pressButtonCommand(["z"], 30, 3, True, False),
-    "sequenceGuard":act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 60, True)
+    "fastGuard":act.pressButtonCommand(["z"], 20, 9, True, False),
+    "sequenceGuard":act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 60, True),
+    "heartlessGuard":act.MultipleActionCommands([act.buttonSequenceCommand(["up", "down", "left", "right"], 5, 120, False),act.buttonSequenceCommand(["up", "down", "left", "right"], 3, 52, False),act.buttonSequenceCommand(["z"], 16, 48, True)],30)
 }
 enemyAttacks = {
     "enemyAttack":Spell("Attack", ["Normal Attack"], "1enemy", guardCommands["normalGuard"], [DamageEffect(1, "physAtk", "physDef")]),
-    "dummyBuff":Spell("Dummy Up", ["Buffs all allies"], "allallies", guardCommands["None"], [StatChangeScalingEffect("magiAtk", ["physDef"], 0.1, "Dummy PhysDef", 4, "buffPhysDef"), StatChangeScalingEffect("magiAtk", ["magiDef"], 0.1, "Dummy MagiDef", 4, "buffMagiDef")]),
+    "dummyBuff":Spell("Dummy Up", ["Buffs all allies"], "allallies", guardCommands["None"], [ShieldScalingEffect("magiAtk", 1, "Dummy Shield", 4, "absorb")]),
     "dummyAoE":Spell("Boiler Room", ["AoE magic damage"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(1, "magiAtk", "magiDef")]),
-    "boneSpray":Spell("Bone Spray", ["Shoots bones"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(1, "magiAtk", "magiDef")])
+    "boneSpray":Spell("Bone Spray", ["Shoots bones"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(1, "magiAtk", "magiDef")]),
+    "Havoc Wing":Spell("Havoc Wing", ["Heavy physical damage"], "1enemy", guardCommands["fastGuard"], [DamageEffect(3, "physAtk", "physDef")]),
+    "Firaga":Spell("Firaga", ["Heavy magical AoE"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(2, "magiAtk", "magiDef")]),
+    "Heartless Angel":Spell("Heartless Angel", ["Doom"], "allenemies", guardCommands["heartlessGuard"], [DamageEffect(3, "magiAtk", "magiDef"), DoTEffect(0.5, "magiAtk", "Heartless Angel", 2, "poisonStrong")]),
 }
 
 enemies = {
     "Tutorial Blob":BattleEnemy("Dark Blob", {"maxHP":10,"physAtk":5,"physDef":5,"magiAtk":5,"magiDef":5}, 10, [enemyAttacks["enemyAttack"]], pg.image.load("assets/art/battle/enemies/darkBlob.png").convert_alpha(),EnemyAI()),
-    "Dummy":BattleEnemy("Dummy", {"maxHP":15,"physAtk":6,"magiAtk":6,"physDef":10,"magiDef":10},15,[enemyAttacks["enemyAttack"]]*3+[enemyAttacks["dummyBuff"],enemyAttacks["dummyAoE"]],pg.image.load("assets/art/battle/enemies/dummy.png").convert_alpha(),EnemyAI()),
+    "Dummy":BattleEnemy("Dummy", {"maxHP":15,"physAtk":6,"magiAtk":6,"physDef":10,"magiDef":10},15,[enemyAttacks["enemyAttack"]]*1+[enemyAttacks["dummyBuff"],enemyAttacks["dummyAoE"]]*100,pg.image.load("assets/art/battle/enemies/dummy.png").convert_alpha(),EnemyAI()),
     "Testing Skeleton":BattleEnemy("Skeleton", {"maxHP":50000,"physAtk":10,"physDef":10,"magiAtk":10,"magiDef":10}, 50000, [enemyAttacks["enemyAttack"],enemyAttacks["boneSpray"]], pg.image.load("assets/art/battle/enemies/skeleton.png").convert_alpha(),EnemyAI()),
+    "Kefka Final Battle":BattleEnemy("Kefka", {"maxHP":4500,"physAtk":200,"magiAtk":300,"physDef":200,"magiDef":300}, 4500, [enemyAttacks["enemyAttack"]]*0+[enemyAttacks["Havoc Wing"]]*0+[enemyAttacks["Firaga"],enemyAttacks["Heartless Angel"]], pg.image.load("assets/art/battle/enemies/kefka.png").convert_alpha(), EnemyAI())
 }
 
 actionCommandList = {
@@ -1043,9 +1116,9 @@ spellList = {
     "Math Skill L1":Spell("Math Skill L1", ["Math Skill L1", "Draws in enemy attacks", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L4":Spell("Math Skill L4", ["Math Skill L4", "Pulls damage away from allies,", "taking damage in the process for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L7":Spell("Math Skill L7", ["Math Skill L7", "Shields party from CRITs", "for 5 turns", "No Action Command"], "allallies", actionCommandList["None"],[CritProtectEffect("Math Protect L7", 5, "protectCrit")]),
-    "Math Skill L10":Spell("Math Skill L10", ["Math Skill L10", "Creates a ward over the party", "that absorbs damage until destroyed", "Hold C, then release!"], "allallies", actionCommandList["Hold C Fast"],[]), # UNFINISHED
+    "Math Skill L10":Spell("Math Skill L10", ["Math Skill L10", "Creates a shield over each ally", "that absorbs damage until destroyed", "Hold C, then release!"], "allallies", actionCommandList["Hold C Fast"],[ShieldScalingEffect("magiAtk", 1/2, "Math Shield", 1, "absorb")]),
     "Math Skill L13":Spell("Math Skill L13", ["Math Skill L13", "Increases Defensive Stats", "for 5 turns", "No Action Command"], "self", actionCommandList["None"],[StatChangeFixedEffect(["physDef", "magiDef"], 0.8, "Math L13", 4, "buffBothDef")]),
-    "Math Skill L16":Spell("Math Skill L16", ["Math Skill L16", "Braces self for a physical attack,", "dealing damage back when guarded", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
+    "Math Skill L16":Spell("Math Skill L16", ["Math Skill L16", "Reflect guarded physical attacks this turn,", "taking no damage.", "No Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Math Skill L19":Spell("Math Skill L19", ["Math Skill L19", "Deals heavy damage with user's physical defense", "Hold C, then release!"], "1enemy", actionCommandList["Hold C Slow"],[DamageEffect(5, "physDef", "physDef")]),
     
     # PSYCHOLOGY SKILLS
@@ -1059,7 +1132,7 @@ spellList = {
     
     # HISTORY SKILLS
     "History Skill L1":Spell("History Skill L1", ["History Skill L1", "Heal an ally", "Hold X!"], "1ally", actionCommandList["Hold X"],[HealEffect(0.7, "magiAtk")]),
-    "History Skill L4":Spell("History Skill L4", ["History Skill L4", "Cures all conditions", "on an ally", "No Action Command"], "1ally", actionCommandList["None"],[]), # UNFINISHED
+    "History Skill L4":Spell("History Skill L4", ["History Skill L4", "Removes all effects", "on an ally", "No Action Command"], "1ally", actionCommandList["None"],[]), # UNFINISHED
     "History Skill L7":Spell("History Skill L7", ["History Skill L7", "Gives passive regeneration", "to an ally", "Press X or DOWN as it appears!"], "1ally", actionCommandList["X or Down"],[HoTEffect(0.3, "magiAtk", "History Regen", 5, "regen")]),
     # Revive
     "History Skill L13":Spell("History Skill L13", ["History Skill L13", "Heal party", "Hold X, then press UP and DOWN!"], "allallies", actionCommandList["Hold X, then Up/Down"],[HealEffect(0.5, "magiAtk")]),
@@ -1067,11 +1140,11 @@ spellList = {
     "History Skill L19":Spell("History Skill L19", ["History Skill L19", "Revive all fallen party member and heals them greatly", "Mash UP, then DOWN, then X!"], "allallies", actionCommandList["Mash Up/Down/X"],[ReviveEffect(),HealEffect(2, "magiAtk")]), 
 
     "Languages Skill L1":Spell("Languages Skill L1", ["Languages Skill L1", "Lowers an enemy's defense and magic defense", "Can Stack", "Press the right direction when it appears!"], "1enemy", actionCommandList["Hidden Direction Press"],[StatScalingStackingEffect("magiAtk", ["physDef","magiDef"], -0.05, "Languages L1 BothDef", 3, "debuffBothDef")]),
-    "Languages Skill L4":Spell("Languages Skill L4", ["Languages Skill L4", "Copies the last skill used", "by an ally.", "Previous Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
+    "Assist":Spell("Assist", ["Languages Skill L4", "Ally uses their most", "recently used action this battle.", "Previous Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Triple Hit":Spell("Triple Hit", ["Triple Hit", "Hits three times", "Press the shown buttons in time!"], "1enemy", actionCommandList["Triple Hit"], [DamageEffect(1, "physAtk", "physDef") for i in range(3)]),
     "Languages Skill L10":Spell("Languages Skill L10", ["Languages Skill L10", "Deals heavy damage over 3 turns", "Press X or C!"], "1enemy", actionCommandList["Hidden X/C Fast"],[DoTEffect(1, "magiAtk", "Languages DoT", 3, "poisonStrong")]),
     "Languages Skill L13":Spell("Languages Skill L13", ["Languages Skill L13", "Attacks, with a chance to find an item", "Press Z!"], "1enemy", actionCommandList["Press Z Fast"],[]), # UNFINISHED
-    "Languages Skill L16":Spell("Languages Skill L16", ["Languages Skill L16", "Activates end-of-turn effects", "on one enemy 3 times", "No Action Command"], "1enemy", actionCommandList["None"],[ActivateEffects() for x in range(3)]), # UNFINISHED
+    "Languages Skill L16":Spell("Languages Skill L16", ["Languages Skill L16", "Activates end-of-turn effects", "on one enemy 3 times", "No Action Command"], "1enemy", actionCommandList["None"],[ActivateEffects() for x in range(3)]),
     "Languages Skill L19":Spell("Languages Skill L19", ["Languages Skill L19", "Removes status effects,", "dealing damage relative to amount", "Up-Up-Down-Down-","-Left-Right-Left-Right-","-X-C-Z!"], "1enemy", actionCommandList["Konami Code"],[]), # UNFINISHED
 
     "English Skill L1":Spell("English Skill L1", ["English Skill L1", "Magic attack, hits 1 enemy", "Press the shown button!"], "1enemy", actionCommandList["Hidden Button Press"], [DamageEffect(2.5, "magiAtk", "magiDef")]),

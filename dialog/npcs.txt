@@ -59,6 +59,9 @@ Dummy Builder
 FirstInteraction(): Dummy Builder First
 Auto(): Dummy Builder
 
+Kefka
+Auto(): Kefka
+
 Bobby
 FirstInteraction(): Fix Healing Place - First
 QuestStatus(FixHealingPlace, -1): Fix Healing Place

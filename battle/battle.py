@@ -1043,7 +1043,7 @@ enemyAttacks = {
     "boneSpray":Spell("Bone Spray", ["Shoots bones"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(1, "magiAtk", "magiDef")]),
     "Havoc Wing":Spell("Havoc Wing", ["Heavy physical damage"], "1enemy", guardCommands["fastGuard"], [DamageEffect(3, "physAtk", "physDef")]),
     "Firaga":Spell("Firaga", ["Heavy magical AoE"], "allenemies", guardCommands["sequenceGuard"], [DamageEffect(2, "magiAtk", "magiDef")]),
-    "Heartless Angel":Spell("Heartless Angel", ["Doom"], "allenemies", guardCommands["heartlessGuard"], [DamageEffect(3, "magiAtk", "magiDef"), DoTEffect(0.5, "magiAtk", "Heartless Angel", 2, "poisonStrong")]),
+    "Heartless Angel":Spell("Heartless Angel", ["Doom"], "allenemies", guardCommands["heartlessGuard"], [DamageEffect(3, "magiAtk", "magiDef"), DoTEffect(0.2, "magiAtk", "Heartless Angel", 2, "poisonStrong")]),
 }
 
 enemies = {

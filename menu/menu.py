@@ -1,6 +1,7 @@
 import pygame as pg
 from textwrap import wrap
 import dialog.dialog as dialog
+import battle.battle as battle
 import stats.stats as stats
 import mapScreen.mapScreen as mapScreen
 import math
@@ -471,6 +472,7 @@ class MenuOptionsHandler(MenuHandler):
         self.shiftx = shiftx
         self.shifty = shifty
         self.mode = mode
+        self.conditions = [dialog.Condition() for i in range(self.optionCount)]
         if self.mode == "vertical":
             self.plusOption = "down"
             self.minusOption = "up"
@@ -479,6 +481,10 @@ class MenuOptionsHandler(MenuHandler):
             self.minusOption = "left"
         self.active = False
         self.pointer = pg.image.load("assets/art/ui/menus/pointer.png").convert_alpha()
+    def Conditions(optionList, previous, posx, posy, shiftx, shifty, conditions, mode="vertical"):
+        handler = MenuOptionsHandler(optionList, previous, posx, posy, shiftx, shifty, mode)
+        handler.conditions = conditions
+        return handler
     def Activate(self):
         self.selected = 0
         self.active = True
@@ -502,7 +508,11 @@ class MenuOptionsHandler(MenuHandler):
             rect.center = self.posx + self.selected*self.shiftx, self.posy + self.selected*self.shifty
             screen.blit(self.pointer, rect)
     def Update(self, screen, world, inputs):
-        if self.oldInputs["confirm"] == False and inputs["confirm"]:
+        if len(world.get_component(dialog.PlayerData)) > 0:
+            playerData = world.get_component(dialog.PlayerData)[0][1]
+        else:
+            playerData = dialog.PlayerData([],[],[],[],battle.SharedStats(0,0,0,0),"none")
+        if self.oldInputs["confirm"] == False and inputs["confirm"] and self.conditions[self.selected].verify("", playerData):
             # Return chosen MenuOptionsHandler name
             print("Confirm")
             return self.optionList[self.selected]
@@ -578,7 +588,10 @@ class StatsMenu(MenuItem):
 
         
         for i, skillName in enumerate(["maxHP", "physAtk", "magiAtk", "physDef", "magiDef"]):
-            printScr(f"{skillName:8}:{character.baseStats.finalStats[skillName]:4} ({character.baseStats.evs[skillName]:1}/8 EVs)", self.posx, self.posy+196+i*48, (255,255,255), self.font, screen)
+            if character.baseStats.evs[skillName] > 7:
+                printScr(f"{skillName:8}:{character.baseStats.finalStats[skillName]:4} ({character.baseStats.evs[skillName]:1}/8 EVs)", self.posx, self.posy+196+i*48, (50,255,50), self.font, screen)
+            else:
+                printScr(f"{skillName:8}:{character.baseStats.finalStats[skillName]:4} ({character.baseStats.evs[skillName]:1}/8 EVs)", self.posx, self.posy+196+i*48, (255,255,255), self.font, screen)
 
         shortNames = {"maxHP":"HP","physAtk":"PA","physDef":"PD","magiAtk":"MA","magiDef":"MD"}
         
@@ -715,10 +728,22 @@ class OptionsMenu(MenuItem):
         self.optionList = optionList
         self.visible = visible
         self.font = pg.font.SysFont("Courier", 20)
+        self.conditions = [dialog.Condition() for i in range(len(self.optionList))]
+    def ConditionMenu(left, top, length, height, optionList, visible, conditionList):
+        menu = OptionsMenu(left, top, length, height, optionList, visible)
+        menu.conditions = conditionList
+        return menu
     def draw(self, screen, world):
         drawMenuBox(screen, self.left, self.top, self.length, self.height)
+        if len(world.get_component(dialog.PlayerData)) > 0:
+            playerData = world.get_component(dialog.PlayerData)[0][1]
+        else:
+            playerData = dialog.PlayerData([],[],[],[],battle.SharedStats(0,0,0,0),"none")        
         for i, option in enumerate(self.optionList):
-            printScr(option, self.left+16, self.top+24+i*48, (255,255,255), self.font, screen)
+            if self.conditions[i].verify("", playerData):
+                printScr(option, self.left+16, self.top+24+i*48, (255,255,255), self.font, screen)
+            else:
+                printScr(option, self.left+16, self.top+24+i*48, (150,150,150), self.font, screen)
 
 class BackgroundMenu(MenuItem):
     def __init__(self, visible):

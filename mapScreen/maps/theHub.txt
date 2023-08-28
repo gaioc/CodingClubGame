@@ -35,6 +35,7 @@ gggggggggggggggggggggggg<>gggggggggggggggggggggg
 gggggggggggggggggggggggg<>gggggggggggggggggggggg
 ggggggggggggggggggggggggFFgggggggggggggggggggggg
 
+10|11|Tutorial NPC|npc.png
 28|28|Dummy Builder|npc.png
 12|28|Kefka|npc.png
 

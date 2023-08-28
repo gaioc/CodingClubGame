@@ -17,7 +17,52 @@ Opening Scene
 ???:I can't let you go alone though. Why don't you check out the lockers and see if anyone wants to help?||16
 ???:It's just to your left.||17
 ???:You can also pass through the armoury over here to pick up some equipment if you want.||18
-???:Come back to me once you're done.||-2
+???:Come back to me once you've got yourself 2 more people from the lockers.||19
+\GiveQuest TutorialDone||20
+\GiveQuest FullParty||-2
+
+Repeat Tutorial Instructions
+???:Why don't you check out the lockers and see if anyone wants to help?||1
+???:It's just to your left.||2
+???:You can also pass through the armoury over here to pick up some equipment if you want.||3
+???:Come back to me once you've got yourself 2 more people from the lockers.||-2
+
+Finish Tutorial
+???:I see you found some helpers! It's good that you aren't going it alone.||1
+???:In battles, each of them will get to act in order. You can change that order in the Menu.||2
+???:I'll give you the key to unlock the exit beyond the Locker Room.||3
+???:Just beyond there is the Tech Room. There were eyewitness reports of dark forces like the one that took Scotty.||4
+???:There's a good chance that you'll find some information there. Be careful, though.||5
+\GiveItem Area1Key||6
+\BumpQuest TutorialDone||7
+Obtained Key to Area 1!||-2
+
+Tutorial Recap
+???:Hey! Do you want me to repeat any of the advice I've given you?|Yes,No|23,24
+[Battles]||2
+In a battle you have various commands, including Attack, Defend, Skill, Item, and Run.||3
+Attack: deal damage to 1 enemy based on Attack stat. Hit Z at the right time for more damage.||4
+Defend: reduce damage taken this turn.||5
+Skill: use a skill you know. Skills cost TP, shown on the left side of the screen in battle.||6
+Item: use an item. Some items can be used in battle and have various effects.||7
+Run: run away from the battle. Only applies to some battles.||8
+In battle, when enemies attack you, you can defend yourself by completing the Action Command shown on screen.||9
+This will lower the damage you take and reduce the chance of additional effects happening.||24
+[Party Members]||11
+You now have multiple members in your party. They will follow you around and help you.||12
+Party members gain EXP at the same rate as you, and will learn skills related to their classes.||13
+In battle, you will control all three of them. You can change the order they will act from the Menu. (not in battle)||14
+Some enemy attacks will target your whole party, and some of your skills might be able to target an ally.||15
+Party members also gain Skill Points, which can be used individually.||24
+[Stats]||17
+There are five stats that every character and enemy has:||18
+Physical Attack: controls damage dealt by physical attacks.||19
+Physical Defense: controls damage taken from physical attacks.||20
+Magical Attack: controls damage and strength of most skills.||21
+Magical Defense: controls damage taken from and resistance to most enemy skills.||22
+Maximum HP (Hit Points): controls how much damage can be taken before character/enemy becomes unable to battle.||24
+???:What do you want to know about?|Battles,Party Members,Stats|1,10,16
+???:Good luck out there!||-2
 
 Empty
 \Empty||-2
@@ -44,40 +89,54 @@ Psychology Same Class
 [Placeholder Text: You already chose this class]||-2
 
 English Already Joined
-[Placeholder Text: You already recruited this person]||-2
+I've already joined your party!||1
+[Note: Party member following]||2
+[Outside the Locker Room, party members will follow behind you.]||-2
 
 Math Already Joined
-[Placeholder Text: You already recruited this person]||-2
+I've already joined your party!||1
+[Note: Party member following]||2
+[Outside the Locker Room, party members will follow behind you.]||-2
 
 Science Already Joined
-[Placeholder Text: You already recruited this person]||-2
+I've already joined your party!||1
+[Note: Party member following]||2
+[Outside the Locker Room, party members will follow behind you.]||-2
 
 History Already Joined
-[Placeholder Text: You already recruited this person]||-2
+I've already joined your party!||1
+[Note: Party member following]||2
+[Outside the Locker Room, party members will follow behind you.]||-2
 
 Languages Already Joined
-[Placeholder Text: You already recruited this person]||-2
+I've already joined your party!||1
+[Note: Party member following]||2
+[Outside the Locker Room, party members will follow behind you.]||-2
 
 Art Already Joined
-[Placeholder Text: You already recruited this person]||-2
+I've already joined your party!||1
+[Note: Party member following]||2
+[Outside the Locker Room, party members will follow behind you.]||-2
 
 Psychology Already Joined
-[Placeholder Text: You already recruited this person]||-2
+I've already joined your party!||1
+[Note: Party member following]||2
+[Outside the Locker Room, party members will follow behind you.]||-2
 
 Science Lost Item
-[Placeholder Text: You need to find their lost item]||-2
+[You need to find their lost item.]||-2
 
 History Lost Item
-[Placeholder Text: You need to find their lost item]||-2
+[You need to find their lost item.]||-2
 
 Languages Lost Item
-[Placeholder Text: You need to find their lost item]||-2
+[You need to find their lost item.]||-2
 
 Art Lost Item
-[Placeholder Text: You need to find their lost item]||-2
+[You need to find their lost item.]||-2
 
 Psychology Lost Item
-[Placeholder Text: You need to find their lost item]||-2
+[You need to find their lost item.]||-2
 
 English Joins Party
 [Placeholder Text: something like "sure, I'll join you!"]||1
@@ -85,6 +144,7 @@ English Joins Party
 \BumpQuest EnglishJoined||3
 \JoinParty EnglishName english||4
 [Placeholder Text: English joined the party!]||5
+\BumpQuest FullParty||6
 [Ability description]||-2
 
 Math Joins Party
@@ -93,6 +153,7 @@ Math Joins Party
 \BumpQuest MathJoined||3
 \JoinParty MathName math||4
 [Placeholder Text: Math joined the party!]||5
+\BumpQuest FullParty||6
 [Ability description]||-2
 
 Science Joins Party
@@ -110,6 +171,7 @@ Science Special Case
 \BumpQuest ScienceJoined||3
 \JoinParty ScienceName science||4
 [Placeholder Text: Science joined the party!]||5
+\BumpQuest FullParty||6
 [Ability description]||-2
 
 History Joins Party

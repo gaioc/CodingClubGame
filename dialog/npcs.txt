@@ -2,6 +2,11 @@ Opening Scene
 FirstInteraction(): Opening Scene
 Auto(): Empty
 
+Tutorial NPC
+QuestStatus(TutorialDone, 1): Tutorial Recap
+QuestStatus(FullParty, 2): Finish Tutorial
+Auto(): Repeat Tutorial Instructions
+
 English
 PlayerClass(english): English Same Class
 QuestStatus(EnglishJoined, 1): English Already Joined

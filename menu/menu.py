@@ -159,21 +159,26 @@ def PauseMenu(world):
         "Portrait 1":PortraitMenu(2,144,True,1),
         "Portrait 2":PortraitMenu(2,286,True,2),
         "SharedStatsViewer":SharedStatsMenu(2,426,True),
-        "OptionsSidebar":OptionsMenu(452,2,188,474,["View Stats", "Equipment", "Inventory", "Change Spells", "Change Order", "Save", "Quit to Title"], True),
+        "OptionsSidebar":OptionsMenu(452,2,188,474,["View Stats", "Equipment", "Inventory", "Key Items", "Change Spells", "Change Order", "Save", "Quit to Title"], True),
         "Background Layer 1":BackgroundMenu(False),
         "Stats 0":StatsMenu(False,0),
         "Stats 1":StatsMenu(False,1),
         "Stats 2":StatsMenu(False,2),
+        "Spells 0":SpellMenu(False,0),
+        "Spells 1":SpellMenu(False,1),
+        "Spells 2":SpellMenu(False,2),
         "SaveSlots":SaveFilesMenu(False)
     },
     {
-        "OptionsSidebar":MenuOptionsHandler(["Stats","Equipment","Inventory","Spells","Order","Save","Quit"],"OptionsSidebar",
+        "OptionsSidebar":MenuOptionsHandler(["Stats","Equipment","Inventory","Key Items","Spells","Order","Save","Quit"],"OptionsSidebar",
                                                 448,22,0,48),
         "Stats":MenuOptionsHandler([f"Stats{i}" for i in range(len(characters))],"OptionsSidebar",
                                        8,72,0,144),
         "Equipment":MenuOptionsHandler([f"Equipment{i}" for i in range(len(characters))],"OptionsSidebar",
                                        8,72,0,144),
         "Inventory":MenuOptionsHandler([],"OptionsSidebar",
+                                       8,72,0,144),
+        "KeyItems":MenuOptionsHandler([],"OptionsSidebar",
                                        8,72,0,144),
         "Spells":MenuOptionsHandler([f"Spells{i}" for i in range(len(characters))],"OptionsSidebar",
                                        8,72,0,144),
@@ -182,6 +187,7 @@ def PauseMenu(world):
     },
     "OptionsSidebar"
     )
+    print("working")
     pauseMenu.closable = True
 
     pauseMenu.options["Save"] = MenuChangerHandler({"Background Layer 1":True,"SaveSlots":True},pauseMenu,"SaveSlots")
@@ -192,13 +198,18 @@ def PauseMenu(world):
     for i in range(5):
         pauseMenu.options[f"File{i}"] = SaveGameHandler(i, "SaveBack")
     
-    for i in range(3):
+    for i in range(len(characters)):
         pauseMenu.options[f"Order{i}"] = MenuOptionsHandler([f"Order{i}|{j}" for j in range(len(characters))],"Order",
                                        8,72,0,144)
         for j in range(len(characters)):
             pauseMenu.options[f"Order{i}|{j}"] = MenuSwapHandler(i,j,"OptionsSidebar")
 
-    for i in range(3):
+    for i in range(len(characters)):
+        pauseMenu.options[f"Spells{i}"] = MenuChangerHandler({"Background Layer 1":True,f"Spells {i}":True},pauseMenu,f"SpellList{i}")
+        pauseMenu.options[f"SpellList{i}"] = MenuToggleListHandler(characters[i].spellNames,f"SpellsBack{i}",
+                                                                  8,16,0,56)
+        pauseMenu.options[f"SpellsBack{i}"] = MenuChangerHandler({"Background Layer 1":False,f"Spells {i}":False},pauseMenu,f"OptionsSidebar")
+        
         pauseMenu.options[f"Stats{i}"] = MenuChangerHandler({"Background Layer 1":True,f"Stats {i}":True},pauseMenu,f"EV{i}")
         pauseMenu.options[f"EV{i}"] = MenuOptionsHandler([f"EVmaxHP{i}",f"EVphysAtk{i}",f"EVmagiAtk{i}",f"EVphysDef{i}",f"EVmagiDef{i}"],f"StatsBack{i}",
                                                          0,212,0,48)
@@ -312,6 +323,7 @@ class SaveGameHandler(MenuHandler):
         mapName = world.get_component(mapScreen.TileMap)[0][1].name
         posx = int(world.get_components(mapScreen.PlayerMove, mapScreen.Position)[0][1][1].posx//32)
         posy = int(world.get_components(mapScreen.PlayerMove, mapScreen.Position)[0][1][1].posy//32)
+        print(posx,posy)
         playerData = world.get_component(dialog.PlayerData)[0][1]
         saveGame = save.SaveData(mapName, posx, posy, playerData)
         creds = world.get_component(serverRW.Credentials)[0][1]
@@ -384,7 +396,7 @@ class ClassChoiceHandler(MenuHandler):
         character.calculate()
         character.hp = min(character.hp, character.baseStats.finalStats["maxHP"])
         spellsPerClass = consts.spellsPerClass
-        character.spellNames = [spellsPerClass[self.className][0]]
+        character.spellNames = [[spellsPerClass[self.className][0],True]]
         playerData.mainClass = self.className.lower()
         return self.next
 
@@ -529,7 +541,87 @@ class MenuOptionsHandler(MenuHandler):
         return -1
 
         
-        
+class MenuToggleListHandler(MenuHandler):
+    """
+    Holds a list of toggleable options, and handles input to it including confirm/cancel.
+    Individual options have to be in the form (optionName, on/off)
+    maxToggle controls maximum number active at once.
+    """
+    def __init__(self, optionList, previous, posx, posy, shiftx, shifty, maxToggle=100, mode="vertical"):
+        self.oldInputs = {
+            "confirm":True,
+            "cancel":True,
+            "menu":True,
+            "left":True,
+            "right":True,
+            "up":True,
+            "down":True
+        }
+        self.selected = 0
+        self.optionList = optionList
+        self.optionCount = len(optionList)
+        self.previous = previous
+        self.posx = posx
+        self.posy = posy
+        self.shiftx = shiftx
+        self.shifty = shifty
+        self.maxToggle = maxToggle
+        self.mode = mode
+        if self.mode == "vertical":
+            self.plusOption = "down"
+            self.minusOption = "up"
+        else:
+            self.plusOption = "right"
+            self.minusOption = "left"
+        self.active = False
+        self.pointer = pg.image.load("assets/art/ui/menus/pointer.png").convert_alpha()
+    def Activate(self):
+        self.selected = 0
+        self.active = True
+        self.oldInputs = {
+            "confirm":True,
+            "cancel":True,
+            "menu":True,
+            "left":True,
+            "right":True,
+            "up":True,
+            "down":True
+        }
+    def Deactivate(self):
+        self.active = False
+    def draw(self, screen):
+        """
+        Draws a pointer at the location of the current option.
+        """
+        if self.optionList:
+            rect = self.pointer.get_rect()
+            rect.center = self.posx + self.selected*self.shiftx, self.posy + self.selected*self.shifty
+            screen.blit(self.pointer, rect)
+    def Update(self, screen, world, inputs):
+        if self.optionList:
+            totalToggled = sum(1 for i, j in self.optionList if j)
+            if self.oldInputs["confirm"] == False and inputs["confirm"]:
+                # Return chosen MenuOptionsHandler name
+                print("Confirm")
+                if self.optionList[self.selected][1]:
+                    self.optionList[self.selected][1] = False
+                else:
+                    if totalToggled < self.maxToggle:
+                        self.optionList[self.selected][1] = True
+            if self.oldInputs["cancel"] == False and inputs["cancel"]:
+                # Return previous MenuOptionsHandler name
+                print("Cancel")
+                return self.previous
+            if self.oldInputs[self.plusOption] == False and inputs[self.plusOption]:
+                print("+")
+                self.selected = (self.selected + 1) % self.optionCount
+            if self.oldInputs[self.minusOption] == False and inputs[self.minusOption]:
+                print("-")
+                self.selected = (self.selected - 1) % self.optionCount
+            return -1
+        else:
+            return self.previous
+
         
 
 class MenuItem:
@@ -541,6 +633,24 @@ class MenuItem:
         pass
     def Update(self, screen, world, inputs):
         pass
+
+class SpellMenu(MenuItem):
+    def __init__(self, visible, index):
+        self.visible = visible
+        self.font = pg.font.SysFont("Courier", 16)
+        self.index = index
+    def draw(self, screen, world):
+        character = world.get_component(dialog.PlayerData)[0][1].characters[self.index]
+
+        spellList = character.spellNames
+
+        for y in range(len(spellList)):
+            if spellList[y][1]:
+                pg.draw.circle(screen, (255,255,255), (16, 16+y*56), 8)
+            printWrapped(spellList[y][0],15,24,32,16+y*56,(255,255,255),self.font,screen)
+        
+            description = " ".join(battle.spellList[spellList[y][0]].description[1:])
+            printWrapped(description, 40, 24, 192, 16+y*56, (255,255,255),self.font,screen)
 
 class StatsMenu(MenuItem):
     def __init__(self, visible, index):

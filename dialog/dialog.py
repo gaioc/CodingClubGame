@@ -285,7 +285,7 @@ class DialogJoinParty(DialogInstance):
         for i in range(1, tempChar.baseStats.level+3, 3):
             print(i)
             if i < 20:
-                tempChar.spellNames.append(spellsPerClass[self.className.lower()][count])
+                tempChar.spellNames.append([spellsPerClass[self.className.lower()][count], count < 4])
             count += 1
         playerData.characters.append(tempChar)
         return self.next

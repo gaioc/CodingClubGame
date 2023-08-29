@@ -60,7 +60,8 @@ class BattleEntity:
         stats = character.totalStats
         hp = character.hp
         self.character = character
-        spells = [spellList[i] for i in character.spellNames[:4]]
+        print(character.spellNames)
+        spells = [spellList[i] for i, j in character.spellNames if j]
         self.__init__(name, stats, hp, spells)
         self.updateStats()
         return self
@@ -567,7 +568,7 @@ class VictoryHandler:
                 character.baseStats.setLevel(character.baseStats.level + 1)
                 self.menuList.append(DescriptionConfirmAction([f"{character.name} grew to level {character.baseStats.level}!"] + [f"{statName.upper():8}: {oldBase[statName]:6} + {(character.baseStats.finalStats[statName] - oldBase[statName]):3} = {character.baseStats.finalStats[statName]:5}" for statName in ["maxHP", "physAtk", "physDef", "magiAtk", "magiDef"]],1, -1))
                 if character.baseStats.level in [1, 4, 7, 10, 13, 16, 19] and character.playerClass.lower() != "none":
-                    character.spellNames.append(spellsPerClass[character.playerClass.lower()][int((character.baseStats.level - 1)//3)])
+                    character.spellNames.append([spellsPerClass[character.playerClass.lower()][int((character.baseStats.level - 1)//3)], len(character.spellNames) < 4])
                     self.menuList.append(DescriptionConfirmAction([f"{character.name} learned {spellsPerClass[character.playerClass.lower()][int((character.baseStats.level - 1)//3)]}!", ("Equip it in the Menu" if len(character.spellNames) > 4 else "Automatically Equipped")],1, -1))
         for character in self.allCharacters:
             character.updateCharacter(character.character)

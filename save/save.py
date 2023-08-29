@@ -84,7 +84,7 @@ class SaveData:
         with open("battle/battles.txt") as battleData:
             battleDict = world.create_entity(battle.readBattleData(battleData.read(), battle.enemies))
 
-                
+        print(self.posx,self.posy)
         # Player on map
         player = world.create_entity(mapScreen.Position(32*self.posx,32*self.posy), 
                                      mapScreen.SpriteRenderer(pg.image.load("assets/art/maps/sprites/player.png").convert_alpha()),

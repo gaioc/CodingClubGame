@@ -68,7 +68,7 @@ ignoredPackages = ["unit_tests"]
   [packager.features]
   enabledForHosting = false
   packageSearch = true
-  guessImports = true
+  guessImports = false
 
 [languages]
 

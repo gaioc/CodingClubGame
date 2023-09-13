@@ -1138,21 +1138,21 @@ spellList = {
     # Revive
     "History Skill L13":Spell("History Skill L13", ["History Skill L13", "Heal party", "Hold X, then press UP and DOWN!"], "allallies", actionCommandList["Hold X, then Up/Down"],[HealEffect(0.5, "magiAtk")]),
     "History Skill L16":Spell("History Skill L16", ["History Skill L16", "Drain an enemy's life", "to heal the party", "Hold X!"], "1enemy", actionCommandList["Hold X Slow"],[MultiVampireEffect(4, 0.25, "magiAtk", "magiDef")]),
-    "History Skill L19":Spell("History Skill L19", ["History Skill L19", "Revive all fallen party member and heals them greatly", "Mash UP, then DOWN, then X!"], "allallies", actionCommandList["Mash Up/Down/X"],[ReviveEffect(),HealEffect(2, "magiAtk")]), 
+    "History Skill L19":Spell("History Skill L19", ["History Skill L19", "Revive all fallen party members and heal them greatly", "Mash UP, then DOWN, then X!"], "allallies", actionCommandList["Mash Up/Down/X"],[ReviveEffect(),HealEffect(2, "magiAtk")]), 
 
-    "Languages Skill L1":Spell("Languages Skill L1", ["Languages Skill L1", "Lowers an enemy's defense and magic defense", "Can Stack", "Press the right direction when it appears!"], "1enemy", actionCommandList["Hidden Direction Press"],[StatScalingStackingEffect("magiAtk", ["physDef","magiDef"], -0.05, "Languages L1 BothDef", 3, "debuffBothDef")]),
+    "Languages Skill L1":Spell("Languages Skill L1", ["Languages Skill L1", "Lowers an enemy's defense and magic defense,", "Can Stack", "Press the right direction when it appears!"], "1enemy", actionCommandList["Hidden Direction Press"],[StatScalingStackingEffect("magiAtk", ["physDef","magiDef"], -0.05, "Languages L1 BothDef", 3, "debuffBothDef")]),
     "Assist":Spell("Assist", ["Languages Skill L4", "Ally uses their most", "recently used action this battle.", "Previous Action Command"], "self", actionCommandList["None"],[]), # UNFINISHED
     "Triple Hit":Spell("Triple Hit", ["Triple Hit", "Hits three times", "Press the shown buttons in time!"], "1enemy", actionCommandList["Triple Hit"], [DamageEffect(1, "physAtk", "physDef") for i in range(3)]),
     "Languages Skill L10":Spell("Languages Skill L10", ["Languages Skill L10", "Deals heavy damage over 3 turns", "Press X or C!"], "1enemy", actionCommandList["Hidden X/C Fast"],[DoTEffect(1, "magiAtk", "Languages DoT", 3, "poisonStrong")]),
     "Languages Skill L13":Spell("Languages Skill L13", ["Languages Skill L13", "Attacks, with a chance to find an item", "Press Z!"], "1enemy", actionCommandList["Press Z Fast"],[]), # UNFINISHED
     "Languages Skill L16":Spell("Languages Skill L16", ["Languages Skill L16", "Activates end-of-turn effects", "on one enemy 3 times", "No Action Command"], "1enemy", actionCommandList["None"],[ActivateEffects() for x in range(3)]),
-    "Languages Skill L19":Spell("Languages Skill L19", ["Languages Skill L19", "Removes status effects,", "dealing damage relative to amount", "Up-Up-Down-Down-","-Left-Right-Left-Right-","-X-C-Z!"], "1enemy", actionCommandList["Konami Code"],[]), # UNFINISHED
+    "Languages Skill L19":Spell("Languages Skill L19", ["Languages Skill L19", "Removes status effects,", "dealing damage relative to amount", "U-U-D-D-L-R-L-R-X-C-Z!"], "1enemy", actionCommandList["Konami Code"],[]), # UNFINISHED
 
     "English Skill L1":Spell("English Skill L1", ["English Skill L1", "Magic attack, hits 1 enemy", "Press the shown button!"], "1enemy", actionCommandList["Hidden Button Press"], [DamageEffect(2.5, "magiAtk", "magiDef")]),
     "English Skill L4":Spell("English Skill L4", ["English Skill L4", "Lowers an enemy's physical and magic attack", "Press the shown directions in order!"], "1enemy", actionCommandList["Lenient 5 Directions"],[StatChangeScalingEffect("magiAtk", ["physAtk"], -0.1, "English L1 PhysAtk", 4, "debuffPhysAtk"), StatChangeScalingEffect("magiAtk", ["magiAtk"], -0.1, "English L1 MagiAtk", 4, "debuffMagiAtk")]),
     # Triple Hit
     # Revive
     "English Skill L13":Spell("English Skill L13", ["English Skill L13", "Put one enemy to sleep", "No Action Command"], "1enemy", actionCommandList["None"],[]), # UNFINISHED
-    "English Skill L16":Spell("English Skill L16", ["English Skill L16", "Creates a ward over the party", "that absorbs damage until destroyed", "Hold C, then release!"], "allallies", actionCommandList["Hold C Fast"],[]), # UNFINISHED
+    "English Skill L16":Spell("English Skill L16", ["English Skill L16", "Creates a shield over the whole party", "that absorbs damage until destroyed", "Hold C, then release!"], "allallies", actionCommandList["Hold C Fast"],[]), # UNFINISHED
     "English Skill L19":Spell("English Skill L19", ["English Skill L19", "Powerful magic attack, hits all enemies", "Press the shown buttons in sequence!"], "allenemies", actionCommandList["Difficult 12 Buttons/Directions"],[DamageEffect(5, "magiAtk", "magiDef")]),
 }

@@ -106,7 +106,7 @@ class SaveData:
         world.add_processor(dialog.DialogProcessor(), priority=0)
         
         
-
+        print("startworld success")
 
     
     def newGame(world):

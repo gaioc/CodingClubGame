@@ -187,7 +187,7 @@ def PauseMenu(world):
     },
     "OptionsSidebar"
     )
-    print("working")
+    
     pauseMenu.closable = True
 
     pauseMenu.options["Save"] = MenuChangerHandler({"Background Layer 1":True,"SaveSlots":True},pauseMenu,"SaveSlots")
@@ -207,7 +207,7 @@ def PauseMenu(world):
     for i in range(len(characters)):
         pauseMenu.options[f"Spells{i}"] = MenuChangerHandler({"Background Layer 1":True,f"Spells {i}":True},pauseMenu,f"SpellList{i}")
         pauseMenu.options[f"SpellList{i}"] = MenuToggleListHandler(characters[i].spellNames,f"SpellsBack{i}",
-                                                                  8,16,0,56)
+                                                                  8,16,0,56,maxToggle=4)
         pauseMenu.options[f"SpellsBack{i}"] = MenuChangerHandler({"Background Layer 1":False,f"Spells {i}":False},pauseMenu,f"OptionsSidebar")
         
         pauseMenu.options[f"Stats{i}"] = MenuChangerHandler({"Background Layer 1":True,f"Stats {i}":True},pauseMenu,f"EV{i}")
@@ -649,7 +649,7 @@ class SpellMenu(MenuItem):
                 pg.draw.circle(screen, (255,255,255), (16, 16+y*56), 8)
             printWrapped(spellList[y][0],15,24,32,16+y*56,(255,255,255),self.font,screen)
         
-            description = " ".join(battle.spellList[spellList[y][0]].description[1:])
+            description = " ".join(battle.spellList[spellList[y][0]].description[1:-1])
             printWrapped(description, 40, 24, 192, 16+y*56, (255,255,255),self.font,screen)
 
 class StatsMenu(MenuItem):

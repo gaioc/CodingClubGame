@@ -314,12 +314,14 @@ class StatChangeFixedEffect(SpellEffect):
                 target.statusEffects.append(StatChangeStatusEffect(self.name, self.turns, 
                                                                    [(StatModifier(self.name, self.amount), stat) for stat in self.stats],
                                                                    self.icon))
+                world.create_entity(TemporaryText(str(int(self.amount*100))+"%", (50,50,150), 30, 48, 240))
             else:
                 for i, statusEffect in enumerate(target.statusEffects):
                     if statusEffect.name == self.name:
                         target.statusEffects[i] = StatChangeStatusEffect(self.name, self.turns, 
                                                                    [(StatModifier(self.name, self.amount), stat) for stat in self.stats],
                                                                    self.icon)
+                        world.create_entity(TemporaryText(str(int(self.amount*100))+"%", (50,50,150), 30, 48, 240))
 class StatChangeScalingEffect(SpellEffect):
     """Inflict a stat buff/debuff of scaling strength on entity for a certain amount of turns."""
     def __init__(self, scaling, stats, amount, name, turns, icon):
@@ -337,12 +339,14 @@ class StatChangeScalingEffect(SpellEffect):
                 target.statusEffects.append(StatChangeStatusEffect(self.name, self.turns, 
                                                                    [(StatModifier(self.name, total), stat) for stat in self.stats],
                                                                    self.icon))
+                world.create_entity(TemporaryText(str(int(total*100))+"%", (50,50,150), 30, 48, 240))
             else:
                 for i, statusEffect in enumerate(target.statusEffects):
                     if statusEffect.name == self.name:
                         target.statusEffects[i] = StatChangeStatusEffect(self.name, self.turns, 
                                                                    [(StatModifier(self.name, total), stat) for stat in self.stats],
                                                                    self.icon)
+                        world.create_entity(TemporaryText(str(int(total*100))+"%", (50,50,150), 30, 48, 240))
 class StatScalingStackingEffect(SpellEffect):
     """Inflict a stat buff/debuff of scaling strength on entity for a certain amount of turns that stacks."""
     def __init__(self, scaling, stats, amount, name, turns, icon):
@@ -356,9 +360,10 @@ class StatScalingStackingEffect(SpellEffect):
         total = math.log(user.stats[self.scaling], 2) * self.amount * actionCommandResult
         print(total)
         for i, target in enumerate(targets):
-                target.statusEffects.append(StatChangeStatusEffect(self.name, self.turns, 
+            target.statusEffects.append(StatChangeStatusEffect(self.name, self.turns, 
                                                                    [(StatModifier(self.name, total), stat) for stat in self.stats],
-                                                                   self.icon))                                                  
+                                                                   self.icon))             
+            world.create_entity(TemporaryText(str(int(total*100))+"%", (50,50,150), 30, 48, 240))
 class CritUpScalingEffect(SpellEffect):
     """Inflict a stat buff/debuff of scaling strength on entity for a certain amount of turns."""
     def __init__(self, scaling, amount, name, turns, icon):
@@ -379,6 +384,7 @@ class CritUpScalingEffect(SpellEffect):
                     if statusEffect.name == self.name:
                         target.statusEffects[i] = CritUpStatusEffect(self.name, self.turns, total,
                                                                    self.icon)
+            world.create_entity(TemporaryText(str(int(total*100))+"%", (50,50,150), 30, 48, 240))
 
 class ShieldScalingEffect(SpellEffect):
     """Put a shield of scaling strength on entity for a certain amount of turns."""
@@ -763,6 +769,15 @@ class BattleHandler:
             result = self.victoryHandler.Update(screen, inputs, world)
             if result == 1:
                 return self.Deactivate(world)
+            else:
+                return -1
+        elif self.progress == "defeat":
+            pg.draw.rect(screen, consts.menuBackgroundColour, pg.Rect(140, 320, 500, 160))
+            pg.draw.rect(screen, (255,255,255), pg.Rect(140, 320, 500, 160),4)
+            printtoscreen(screen, 160, 340, "GAME OVER!", self.font, (255,255,255))
+            if inputs["confirm"]:
+                # temporary, later will do a nicer game over screen, and a load last save option
+                quit()
             else:
                 return -1
         
